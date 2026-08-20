@@ -1,16 +1,10 @@
-"""
-Data models for tools.
-
-In this project's parlance, a "tool" is an individual member of our toolchain,
-one that gets turned into a Python wheel. Each "tool" can actually contain
-multiple individual binaries/entry points.
-"""
+"""Data models for tool definitions."""
 
 import tomllib
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, StrictStr, ConfigDict, StrictBool
+from pydantic import BaseModel, ConfigDict, StrictBool, StrictStr
 
 
 def _to_kebab(s: str) -> str:
@@ -23,20 +17,19 @@ class _Model(BaseModel):
 
 class Tool(_Model):
     version: Literal[1]
-    tool: ToolSpec
-    source: ToolSource
-    build: BuildSpec | None = None
+    tool: "ToolSpec"
+    source: "ToolSource"
+    build: "BuildSpec | None" = None
 
     @classmethod
-    def load(cls, path: Path) -> Tool:
-        with path.open(mode="rb") as io:
-            raw = tomllib.load(io)
+    def load(cls, path: Path) -> "Tool":
+        with path.open(mode="rb") as stream:
+            raw = tomllib.load(stream)
 
-        return Tool.model_validate(raw)
+        return cls.model_validate(raw)
 
     @property
     def python_package_name(self) -> str:
-        # TODO: Probably need to validate and/or normalize the name here.
         return f"astral-dev-toolchain-{self.tool.name}"
 
 

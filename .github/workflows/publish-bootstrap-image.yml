@@ -1,0 +1,60 @@
+name: Publish bootstrap image
+
+on:
+  push:
+    tags:
+      - "bootstrap-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Validate bootstrap version
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Match image and tag versions
+        id: version
+        shell: bash
+        run: |
+          tag_version="${GITHUB_REF_NAME#bootstrap-v}"
+          image_version="$(python -c 'import tomllib; print(tomllib.load(open("image/toolchain.toml", "rb"))["bootstrap-image"]["version"])')"
+          if [[ "${tag_version}" != "${image_version}" ]]; then
+            echo "tag version ${tag_version} does not match bootstrap image version ${image_version}" >&2
+            exit 1
+          fi
+          echo "version=${tag_version}" >> "${GITHUB_OUTPUT}"
+
+  publish:
+    name: Publish bootstrap
+    needs: version
+    uses: docker/github-builder/.github/workflows/build.yml@a492c6d04fd3315f67230809b44d60cc0acd50b3 # v1
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      target: bootstrap-image
+      output: image
+      push: true
+      platforms: linux/amd64,linux/arm64
+      cache: true
+      cache-mode: max
+      cache-scope: astral-dev-toolchain-bootstrap
+      meta-images: ghcr.io/astral-sh/astral-dev-toolchain-bootstrap
+      meta-tags: |
+        type=raw,value=${{ needs.version.outputs.version }}
+      meta-labels: |
+        org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        org.opencontainers.image.version=${{ needs.version.outputs.version }}
+      set-meta-labels: true
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}

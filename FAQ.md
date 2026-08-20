@@ -29,10 +29,15 @@ wheels.
 
 [maturin]: https://www.maturin.rs/
 
-The only real innovation here is a (very large) Docker image that provides
-cross-compilation support for our targets, along with a small metadata format
-(`build.toml`) that tells astral-dev-toolchain how to transform a given
-tool into a set of wheels.
+The host-side `astral-dev-toolchain` command builds and executes a thin local
+Docker image containing `astral-dev-toolchain-zygote`, which turns the small
+`build.toml` metadata format into maturin builds.
+
+That local image derives from a separately versioned, published bootstrap image.
+The bootstrap contains the expensive and slow-moving cross-compilation state:
+system dependencies, Rust targets, the Windows SDK cache, and the macOS SDK.
+Zygote source changes therefore rebuild only a small application layer, while
+tool definitions are mounted at runtime and require no image build at all.
 
 ## Who is this for?
 

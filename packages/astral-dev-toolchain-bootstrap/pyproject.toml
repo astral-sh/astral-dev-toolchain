@@ -1,0 +1,17 @@
+[project]
+name = "astral-dev-toolchain-bootstrap"
+version = "0.1.0"
+description = "Build-time bootstrapper for the Astral development toolchain image"
+authors = [{ name = "William Woodruff", email = "william@yossarian.net" }]
+requires-python = ">=3.14"
+dependencies = [
+    "cargo-xwin>=0.23.1",
+    "rustup>=1.29.0.1",
+]
+
+[project.scripts]
+astral-dev-toolchain-bootstrap = "astral_dev_toolchain_bootstrap:main"
+
+[build-system]
+requires = ["uv_build>=0.12.4,<0.13.0"]
+build-backend = "uv_build"

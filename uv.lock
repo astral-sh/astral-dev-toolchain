@@ -6,6 +6,14 @@ requires-python = ">=3.14"
 exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
 exclude-newer-span = "P7D"
 
+[manifest]
+members = [
+    "astral-dev-toolchain",
+    "astral-dev-toolchain-bootstrap",
+    "astral-dev-toolchain-workspace",
+    "astral-dev-toolchain-zygote",
+]
+
 [[package]]
 name = "annotated-types"
 version = "0.8.0"
@@ -18,22 +26,49 @@ wheels = [
 [[package]]
 name = "astral-dev-toolchain"
 version = "0.1.0"
-source = { editable = "." }
+source = { editable = "packages/astral-dev-toolchain" }
+
+[[package]]
+name = "astral-dev-toolchain-bootstrap"
+version = "0.1.0"
+source = { editable = "packages/astral-dev-toolchain-bootstrap" }
 dependencies = [
     { name = "cargo-xwin" },
+    { name = "rustup" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cargo-xwin", specifier = ">=0.23.1" },
+    { name = "rustup", specifier = ">=1.29.0.1" },
+]
+
+[[package]]
+name = "astral-dev-toolchain-workspace"
+version = "0.0.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "astral-dev-toolchain" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "astral-dev-toolchain", editable = "packages/astral-dev-toolchain" }]
+
+[[package]]
+name = "astral-dev-toolchain-zygote"
+version = "0.1.0"
+source = { editable = "packages/astral-dev-toolchain-zygote" }
+dependencies = [
     { name = "maturin" },
     { name = "pydantic" },
-    { name = "rustup" },
     { name = "tomli-w" },
     { name = "ziglang" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "cargo-xwin", specifier = ">=0.23.1" },
     { name = "maturin", specifier = ">=1.14.1" },
     { name = "pydantic", specifier = ">=2.13.4" },
-    { name = "rustup", specifier = ">=1.29.0.1" },
     { name = "tomli-w", specifier = ">=1.2.0" },
     { name = "ziglang", specifier = ">=0.16.0" },
 ]

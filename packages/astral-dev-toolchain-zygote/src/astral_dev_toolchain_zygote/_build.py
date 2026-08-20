@@ -7,9 +7,8 @@ from tempfile import TemporaryDirectory
 
 import tomli_w
 
-from astral_dev_toolchain._constants import RUSTUP_TARGETS
-from astral_dev_toolchain._plan import Plan
-from astral_dev_toolchain._tool import Tool
+from ._plan import Plan
+from ._tool import Tool
 
 _PYPROJECT_SKELETON: dict = {
     "build-system": {"requires": ["maturin>=1,<2"], "build-backend": "maturin"},
@@ -27,19 +26,8 @@ class Builder:
     def _prepare(self) -> Path:
         with TemporaryDirectory(delete=False) as tempdir:
             tempdir = Path(tempdir)
-
-            # Build up our directory structure. Roughly:
-            #
-            # {tmpdir}
-            # |
-            # |- builder/
-            # | |
-            # | |- pyproject.toml (generated)
-            # |
-            # |- src/ (git clone contents)
             builder_dir = tempdir / "builder"
             builder_dir.mkdir()
-
             src_dir = tempdir / "src"
             src_dir.mkdir()
 
@@ -67,18 +55,15 @@ class Builder:
             else:
                 manifest_path = src_dir / "Cargo.toml"
 
-            # TODO: This will probably need to be configurable for nontrivial layouts.
             pyproject["tool"]["maturin"]["manifest-path"] = str(manifest_path)
-
-            pyproject_path = builder_dir / "pyproject.toml"
-            pyproject_path.write_text(tomli_w.dumps(pyproject))
+            (builder_dir / "pyproject.toml").write_text(tomli_w.dumps(pyproject))
 
         return tempdir
 
-    def build(self):
+    def build(self) -> None:
         prepared_dir = self._prepare()
 
-        for target in RUSTUP_TARGETS:
+        for target in self.plan.targets:
             command = [self.plan.maturin_bin, "build"]
 
             if self.tool.build and self.tool.build.no_default_features:
@@ -97,11 +82,9 @@ class Builder:
 
             if self.plan.dry_run:
                 logger.info(
-                    f"[dry-run] would have run: '{shlex.join([str(a) for a in command])}' in '{prepared_dir / 'builder'}'"
+                    "[dry-run] would have run: '%s' in '%s'",
+                    shlex.join([str(arg) for arg in command]),
+                    prepared_dir / "builder",
                 )
             else:
-                subprocess.run(
-                    command,
-                    check=True,
-                    cwd=prepared_dir / "builder",
-                )
+                subprocess.run(command, check=True, cwd=prepared_dir / "builder")

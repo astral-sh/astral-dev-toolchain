@@ -1,0 +1,14 @@
+[project]
+name = "astral-dev-toolchain"
+version = "0.1.0"
+description = "A CLI to manage and build tools within Astral's development toolchain"
+authors = [{ name = "William Woodruff", email = "william@yossarian.net" }]
+requires-python = ">=3.14"
+dependencies = []
+
+[project.scripts]
+astral-dev-toolchain = "astral_dev_toolchain:main"
+
+[build-system]
+requires = ["uv_build>=0.12.4,<0.13.0"]
+build-backend = "uv_build"
