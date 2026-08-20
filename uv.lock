@@ -34,12 +34,14 @@ version = "0.1.0"
 source = { editable = "packages/astral-dev-toolchain-bootstrap" }
 dependencies = [
     { name = "cargo-xwin" },
+    { name = "pydantic" },
     { name = "rustup" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "cargo-xwin", specifier = ">=0.23.1" },
+    { name = "pydantic", specifier = ">=2.13.4" },
     { name = "rustup", specifier = ">=1.29.0.1" },
 ]
 

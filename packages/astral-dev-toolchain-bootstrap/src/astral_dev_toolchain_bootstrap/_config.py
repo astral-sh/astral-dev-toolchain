@@ -1,58 +1,39 @@
 import tomllib
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, StrictStr
 
 
-def _table(raw: dict[str, Any], key: str) -> dict[str, Any]:
-    value = raw.get(key)
-    if not isinstance(value, dict):
-        raise ValueError(f"missing or invalid [{key}] table")
-    return value
+class _ConfigModel(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        frozen=True,
+        validate_by_alias=True,
+        validate_by_name=True,
+    )
 
 
-@dataclass(frozen=True)
-class RustConfig:
-    toolchain: str
-    targets: tuple[str, ...]
+class RustConfig(_ConfigModel):
+    toolchain: StrictStr
+    targets: tuple[StrictStr, ...]
 
 
-@dataclass(frozen=True)
-class XwinConfig:
-    architectures: tuple[str, ...]
-    sdk_version: str
-    crt_version: str
-    http_retries: int
-    include_debug_libs: bool
-    include_debug_symbols: bool
+class XwinConfig(_ConfigModel):
+    architectures: tuple[StrictStr, ...]
+    sdk_version: StrictStr = Field(alias="sdk-version")
+    crt_version: StrictStr = Field(alias="crt-version")
+    http_retries: StrictInt = Field(alias="http-retries", ge=0)
+    include_debug_libs: StrictBool = Field(alias="include-debug-libs")
+    include_debug_symbols: StrictBool = Field(alias="include-debug-symbols")
 
 
-@dataclass(frozen=True)
-class ImageConfig:
+class ImageConfig(_ConfigModel):
+    version: Literal[1]
     rust: RustConfig
     xwin: XwinConfig
 
     @classmethod
     def load(cls, path: Path) -> "ImageConfig":
         with path.open("rb") as stream:
-            raw = tomllib.load(stream)
-
-        if raw.get("version") != 1:
-            raise ValueError(f"unsupported image configuration version: {raw.get('version')!r}")
-
-        rust = _table(raw, "rust")
-        xwin = _table(raw, "xwin")
-        return cls(
-            rust=RustConfig(
-                toolchain=str(rust["toolchain"]),
-                targets=tuple(str(target) for target in rust["targets"]),
-            ),
-            xwin=XwinConfig(
-                architectures=tuple(str(arch) for arch in xwin["architectures"]),
-                sdk_version=str(xwin["sdk-version"]),
-                crt_version=str(xwin["crt-version"]),
-                http_retries=int(xwin["http-retries"]),
-                include_debug_libs=bool(xwin["include-debug-libs"]),
-                include_debug_symbols=bool(xwin["include-debug-symbols"]),
-            ),
-        )
+            return cls.model_validate(tomllib.load(stream))
