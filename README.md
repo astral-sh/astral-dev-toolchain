@@ -32,24 +32,7 @@ Build a specific tool:
 uv run astral-dev-toolchain build --select just
 ```
 
-The host CLI builds a small local zygote image on top of the published `latest`
-bootstrap image, mounts `./toolchain` read-only into the container, and writes
-wheels to `./dist`. Repeated invocations reuse Docker's cache, so an unchanged
-zygote build is effectively a cache check.
-
-Override the mounted host paths with `--toolchain-dir` and `build --output-dir`,
-respectively. Pass `-v` before `build` to show the Docker commands and enable
-debug logging inside the zygote. A prebuilt zygote image can bypass the local
-build with `--image`.
-
-### Developing the zygote
-
-Edit the zygote package and rerun the normal command. Only its final application
-layer is rebuilt:
-
-```shell
-uv run astral-dev-toolchain build --dry-run --select just
-```
+See `--help` for additional options.
 
 ### Developing the bootstrap image
 
@@ -65,11 +48,3 @@ uv run astral-dev-toolchain \
     --bootstrap-image astral-dev-toolchain-bootstrap:dev \
     build --dry-run --select just
 ```
-
-Bootstrap images are published from `bootstrap-vX.Y.Z` tags under both the
-immutable `X.Y.Z` tag and the rolling `latest` tag.
-
-The repository root is a virtual uv workspace harness. The host CLI,
-build-time bootstrapper, and container-side zygote are peers under `packages/`.
-Tool definitions are runtime inputs and are intentionally excluded from both
-Docker image targets.
