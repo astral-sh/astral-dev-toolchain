@@ -1,3 +1,5 @@
+import logging
+import shlex
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,6 +15,8 @@ _PYPROJECT_SKELETON: dict = {
     "build-system": {"requires": ["maturin>=1,<2"], "build-backend": "maturin"},
     "tool": {"maturin": {"bindings": "bin"}},
 }
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -75,17 +79,29 @@ class Builder:
         prepared_dir = self._prepare()
 
         for target in RUSTUP_TARGETS:
-            subprocess.run(
+            command = [self.plan.maturin_bin, "build"]
+
+            if self.tool.build and self.tool.build.no_default_features:
+                command.append("--no-default-features")
+
+            command.extend(
                 [
-                    self.plan.maturin_bin,
-                    "build",
                     "--release",
                     "--target",
                     target,
                     "--zig",
                     "--out",
                     self.plan.output_dir,
-                ],
-                check=True,
-                cwd=prepared_dir / "builder",
+                ]
             )
+
+            if self.plan.dry_run:
+                logger.info(
+                    f"[dry-run] would have run: '{shlex.join([str(a) for a in command])}' in '{prepared_dir / 'builder'}'"
+                )
+            else:
+                subprocess.run(
+                    command,
+                    check=True,
+                    cwd=prepared_dir / "builder",
+                )

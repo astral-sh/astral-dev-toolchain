@@ -1,24 +1,38 @@
-from astral_dev_toolchain._build import Builder
-from astral_dev_toolchain._plan import Plan
 import argparse
+import logging
 import sys
 from pathlib import Path
 from typing import NoReturn
-from warnings import warn
 
 from astral_dev_toolchain._bootstrap import Bootstrapper
+from astral_dev_toolchain._build import Builder
+from astral_dev_toolchain._plan import Plan
 from astral_dev_toolchain._toolchain import Toolchain
 
 _HERE = Path(__file__)
 _ROOT = _HERE.parent.parent.parent
 _TOOLCHAIN_DIR = _ROOT / "toolchain"
+_LOG_FORMAT = "%(levelname)s %(message)s"
 
-if not _TOOLCHAIN_DIR.is_dir():
-    warn(f"default toolchain dir {_TOOLCHAIN_DIR} not present")
+logger = logging.getLogger(__name__)
+
+
+def _configure_logging(*, verbose: bool) -> None:
+    logging.basicConfig(
+        level=logging.DEBUG if verbose else logging.INFO,
+        format=_LOG_FORMAT,
+        force=True,
+    )
 
 
 def run() -> NoReturn:
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Enable debug logging",
+    )
     parser.add_argument(
         "--toolchain-dir",
         type=Path,
@@ -36,6 +50,18 @@ def run() -> NoReturn:
     build = subcmds.add_parser("build")
     build.set_defaults(func=_do_build)
     build.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Show what would be run without building anything",
+    )
+    build.add_argument(
+        "--select",
+        type=str,
+        default=[],
+        nargs="+",
+        help="List of toolchain tools to build, by `tool.name`",
+    )
+    build.add_argument(
         "--output-dir",
         type=Path,
         default="/dist",
@@ -43,6 +69,12 @@ def run() -> NoReturn:
     )
 
     args = parser.parse_args()
+
+    _configure_logging(verbose=args.verbose)
+    logger.debug("debug logging enabled")
+
+    if not _TOOLCHAIN_DIR.is_dir():
+        logger.warning("default toolchain dir %s not present", _TOOLCHAIN_DIR)
 
     args.func(parser, args)
 
@@ -66,9 +98,8 @@ def _do_build(parser: argparse.ArgumentParser, args: argparse.Namespace):
     if not args.toolchain_dir.is_dir():
         parser.error(f"toolchain directory does not exist: {args.toolchain_dir}")
 
-    # TODO: Plumb --dry-run here.
     plan = Plan.load(args)
-    toolchain = Toolchain.load(args.toolchain_dir)
+    toolchain = Toolchain.load(plan)
 
     # TODO: --select a subset of tools here.
     for tool in toolchain.tools:

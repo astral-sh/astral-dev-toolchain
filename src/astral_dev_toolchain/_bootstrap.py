@@ -1,10 +1,11 @@
-from astral_dev_toolchain._constants import RUSTUP_TARGETS
 import dataclasses
 import importlib.metadata
 import os
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
+
+from astral_dev_toolchain._constants import RUSTUP_TARGETS
 
 _RUSTUP_TOOLCHAIN = "1.97.1"
 

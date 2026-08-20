@@ -10,10 +10,18 @@ import tomllib
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, StrictStr
+from pydantic import BaseModel, StrictStr, ConfigDict, StrictBool
 
 
-class Tool(BaseModel):
+def _to_kebab(s: str) -> str:
+    return s.replace("_", "-")
+
+
+class _Model(BaseModel):
+    model_config = ConfigDict(alias_generator=_to_kebab, populate_by_name=True)
+
+
+class Tool(_Model):
     version: Literal[1]
     tool: ToolSpec
     source: ToolSource
@@ -32,15 +40,16 @@ class Tool(BaseModel):
         return f"astral-dev-toolchain-{self.tool.name}"
 
 
-class ToolSpec(BaseModel):
+class ToolSpec(_Model):
     name: StrictStr
 
 
-class ToolSource(BaseModel):
+class ToolSource(_Model):
     repo: StrictStr
     commit: StrictStr
     tag: StrictStr
 
 
-class BuildSpec(BaseModel):
+class BuildSpec(_Model):
     manifest: StrictStr
+    no_default_features: StrictBool = False
