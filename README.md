@@ -20,8 +20,14 @@ Bootstrap the toolchain environment:
 docker build -t astral-dev-toolchain .
 ```
 
-Build everything:
+Build everything (very slow):
 
 ```shell
 docker run --rm -it -v "$(pwd)/dist:/dist" astral-dev-toolchain build
+```
+
+Build a specific tool:
+
+```
+docker run --rm -it -v "$(pwd)/dist:/dist" astral-dev-toolchain build --select just
 ```
