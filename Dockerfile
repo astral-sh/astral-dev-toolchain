@@ -31,8 +31,9 @@ ARG MACOSX_SDK_SHA
 # TODO: Replace with https://github.com/joseluisq/macosx-sdks?
 RUN --mount=type=tmpfs,target=/tmp/scratch \
     cd /tmp/scratch \
-    && git clone https://github.com/phracker/MacOSX-SDKs \
+    && git clone --filter=blob:none --no-checkout https://github.com/phracker/MacOSX-SDKs \
     && cd MacOSX-SDKs \
+    && git sparse-checkout set MacOSX11.3.sdk \
     && git checkout -q ${MACOSX_SDK_SHA} \
     && mkdir -p /app \
     && mv MacOSX11.3.sdk /app/macos-sdk
