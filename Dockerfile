@@ -89,6 +89,7 @@ COPY --chmod=a+rX --from=macos-sdk ${HOME}/macos-sdk ${HOME}/macos-sdk
 
 COPY --chmod=a+rwX --from=bootstrap ${HOME}/rust ${HOME}/rust
 COPY --chmod=a+rX --from=uv /uv /uvx ${HOME}/.local/bin/
+COPY --chmod=a+rX --from=bootstrap ${HOME}/python ${HOME}/python
 COPY --chmod=a+rX --from=bootstrap ${HOME}/astral-dev-toolchain ${HOME}/astral-dev-toolchain
 COPY --chmod=a+rwX --from=bootstrap ${HOME}/xwin-cache ${HOME}/xwin-cache
 # COPY --chmod only affects contents, not the destination dir itself
@@ -105,6 +106,6 @@ ENV PATH="${HOME}/astral-dev-toolchain/.venv/bin:${HOME}/.local/bin:${CARGO_HOME
 
 # Smoke tests
 RUN cargo --version \
-    uv --version \
-    maturin --version \
-    python-zig version
+    && uv --version \
+    && maturin --version \
+    && python-zig version
