@@ -1,0 +1,151 @@
+ARG UV_VERSION=0.10.0
+ARG UV_DOCKER_HASH=sha256:143b40f4ab56a780f43377604702107b5a35f83a4453daf1e4be691358718a6a
+
+ARG UBUNTU_SNAPSHOT=20260127T200000Z
+
+ARG RUST_VERSION=1.93.0
+
+ARG CARGO_XWIN_VERSION=0.21.4
+ARG XWIN_SDK_VERSION=10.0.22621
+ARG XWIN_CRT_VERSION=14.44.17.14
+
+ARG MACOSX_SDK_SHA=041600eda65c6a668f66cb7d56b7d1da3e8bcc93
+
+FROM ubuntu:26.04@sha256:4095ef613201918336b5d7d00be15d8b09c72ddb77c80bca249c255887a64d87 AS ubuntu-build-deps
+
+ARG RUST_VERSION
+ARG UBUNTU_SNAPSHOT
+
+# Install dependencies for the installation for dependencies
+# ca-certificates are required for using the snapshot
+RUN --mount=type=cache,target=/var/lib/apt/lists \
+    apt install -y --update ca-certificates && \
+    apt install -y --update --snapshot ${UBUNTU_SNAPSHOT} \
+        curl \
+        git
+
+FROM ubuntu-build-deps AS base
+
+ENV HOME=/app
+ENV CARGO_HOME=${HOME}/rust/cargo
+ENV RUSTUP_HOME=${HOME}/rust/rustup
+ENV UV_PYTHON_INSTALL_DIR=${HOME}/python/interpreter
+ENV XWIN_CACHE_DIR=${HOME}/xwin-cache
+
+WORKDIR ${HOME}
+
+# Download a macOS SDK
+FROM ubuntu-build-deps AS macos-sdk
+
+ARG MACOSX_SDK_SHA
+
+# MacOS SDK
+# TODO: Replace with https://github.com/joseluisq/macosx-sdks?
+RUN --mount=type=tmpfs,target=/tmp/scratch \
+    cd /tmp/scratch \
+    && git clone https://github.com/phracker/MacOSX-SDKs \
+    && cd MacOSX-SDKs \
+    && git checkout -q ${MACOSX_SDK_SHA} \
+    && mkdir -p /app \
+    && mv MacOSX11.3.sdk /app/macos-sdk \
+    && cd .. \
+    && rm -rf MacOSX-SDKs
+
+# Work around Dockerfile syntax limitations
+FROM ghcr.io/astral-sh/uv:${UV_VERSION}@${UV_DOCKER_HASH} AS uv
+
+# Install maturin with zig backend (versions pinned in pylock.toml)
+FROM base AS python-builder
+
+ENV PATH="${HOME}/python/.venv/bin:${HOME}/.local/bin"
+
+# Install uv with pinned version
+COPY --from=uv /uv /uvx ${HOME}/.local/bin/
+
+COPY pylock.toml .
+RUN --mount=type=cache,target=${HOME}/.cache \
+    uv venv -p 3.14 $HOME/python/.venv \
+    && uv pip install -p $HOME/python/.venv -r pylock.toml
+
+# Install the rust toolchain
+FROM base AS rust-builder
+
+ENV PATH="${HOME}/.local/bin:${CARGO_HOME}/bin:${PATH}"
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | \
+    sh -s -- -y --default-toolchain=${RUST_VERSION} --profile=minimal
+
+RUN rustup target add \
+  aarch64-apple-darwin \
+  x86_64-apple-darwin \
+  aarch64-unknown-linux-gnu \
+  x86_64-unknown-linux-gnu \
+  aarch64-pc-windows-msvc \
+  x86_64-pc-windows-msvc
+
+# Disable debug info in dev builds to speed up compilation
+RUN printf '[build]\nincremental = false\n\n[profile.dev]\ndebug = false\n' >> ${CARGO_HOME}/config.toml
+
+FROM rust-builder AS xwin-cache
+
+ARG CARGO_XWIN_VERSION
+ARG XWIN_SDK_VERSION
+ARG XWIN_CRT_VERSION
+
+# Install uv with pinned version
+COPY --from=uv /uv /uvx ${HOME}/.local/bin/
+
+
+
+# No caching, cargo-xwin doesn't realize when its inputs changed (as of 0.21.4)
+RUN cargo xwin cache xwin \
+      --xwin-sdk-version ${XWIN_SDK_VERSION} \
+      --xwin-crt-version ${XWIN_CRT_VERSION} \
+      --xwin-arch x86_64,aarch64 \
+      --xwin-include-debug-libs \
+      --xwin-include-debug-symbols
+
+FROM base
+
+ARG UBUNTU_SNAPSHOT
+
+# Install manually allowlisted build dependencies
+# llvm is for llvm-mt (symlinked to mt.exe for lld-link manifest embedding)
+# TODO: Get rid of `ln -s /usr/bin/llvm-mt /usr/bin/mt.exe`
+# Clang is for clang-cl (Windows)
+RUN --mount=type=cache,target=/var/lib/apt/lists \
+    apt install -y --update --snapshot ${UBUNTU_SNAPSHOT} \
+        build-essential \
+        ca-certificates \
+        curl \
+        git \
+        llvm \
+        clang \
+        pkg-config \
+    && ln -s /usr/bin/llvm-mt /usr/bin/mt.exe
+
+
+COPY --chmod=a+rwX --from=rust-builder ${HOME}/rust ${HOME}/rust
+COPY --chmod=a+rX --from=python-builder ${HOME}/.local/bin/uv ${HOME}/.local/bin/uvx ${HOME}/.local/bin/
+COPY --chmod=a+rX --from=python-builder ${HOME}/python ${HOME}/python
+COPY --chmod=a+rX --from=macos-sdk ${HOME}/macos-sdk ${HOME}/macos-sdk
+COPY --chmod=a+rwX --from=xwin-cache ${HOME}/xwin-cache ${HOME}/xwin-cache
+# COPY --chmod only affects contents, not the destination dir itself
+RUN chmod a+w ${HOME}/xwin-cache
+
+# macOS cross-compilation SDK env vars
+ENV SDKROOT=${HOME}/macos-sdk
+ENV CFLAGS_x86_64_apple_darwin="-isystem ${SDKROOT}/usr/include -iframework ${SDKROOT}/System/Library/Frameworks"
+ENV CFLAGS_aarch64_apple_darwin="-isystem ${SDKROOT}/usr/include -iframework ${SDKROOT}/System/Library/Frameworks"
+ENV CARGO_TARGET_X86_64_APPLE_DARWIN_RUSTFLAGS="-C link-arg=-F${SDKROOT}/System/Library/Frameworks -C link-arg=-L${SDKROOT}/usr/lib"
+ENV CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS="-C link-arg=-F${SDKROOT}/System/Library/Frameworks -C link-arg=-L${SDKROOT}/usr/lib"
+
+ENV PATH="${HOME}/python/.venv/bin:${HOME}/.local/bin:${CARGO_HOME}/bin:${PATH}"
+
+# Smoke tests
+RUN cargo --version \
+    uv --version \
+    maturin --version \
+    python-zig version
+
+COPY --chmod=a+rX build-all.sh /app/build-all.sh

@@ -1,0 +1,24 @@
+[project]
+name = "astral-dev-toolchain"
+version = "0.1.0"
+description = "A CLI to manage and build tools within Astral's development toolchain"
+readme = "README.md"
+authors = [{ name = "William Woodruff", email = "william@yossarian.net" }]
+requires-python = ">=3.14"
+dependencies = [
+    "cargo-xwin>=0.23.1",
+    "maturin>=1.14.1",
+    "pydantic>=2.13.4",
+    "rustup>=1.29.0.1",
+    "ziglang>=0.16.0",
+]
+
+[project.scripts]
+astral-dev-toolchain = "astral_dev_toolchain:main"
+
+[build-system]
+requires = ["uv_build>=0.12.4,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.uv]
+exclude-newer = "P7D"

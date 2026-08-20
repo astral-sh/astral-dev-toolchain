@@ -1,0 +1,9 @@
+version = 1
+
+[tool]
+name = "just"
+
+[source]
+repo = "https://github.com/casey/just"
+commit = "7f4ef81bd6a93faa2b28430912c8e9ab0e3dd29a"
+tag = "1.58.0"
