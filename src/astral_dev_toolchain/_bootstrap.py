@@ -92,6 +92,7 @@ class Bootstrapper:
                 f"--xwin-sdk-version={_XWIN_SDK_VERSION}",
                 f"--xwin-crt-version={_XWIN_CRT_VERSION}",
                 f"--xwin-arch={','.join(_XWIN_ARCHES)}",
+                "--xwin-http-retries=10",
                 "--xwin-include-debug-libs",
                 "--xwin-include-debug-symbols",
             ],
