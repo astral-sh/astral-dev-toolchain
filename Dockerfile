@@ -3,9 +3,8 @@
 ARG UV_VERSION=0.12.5
 ARG UBUNTU_SNAPSHOT=20260127T200000Z
 ARG MACOSX_SDK_SHA=041600eda65c6a668f66cb7d56b7d1da3e8bcc93
-# Keep this direct-build default aligned with image/toolchain.toml. The host CLI
-# passes BOOTSTRAP_IMAGE explicitly on every normal zygote build.
-ARG BOOTSTRAP_IMAGE=ghcr.io/astral-sh/astral-dev-toolchain-bootstrap:0.1.0
+# Users can override this through the host CLI's --bootstrap-image option.
+ARG BOOTSTRAP_IMAGE=ghcr.io/astral-sh/astral-dev-toolchain-bootstrap:latest
 
 FROM ubuntu:26.04@sha256:4095ef613201918336b5d7d00be15d8b09c72ddb77c80bca249c255887a64d87 AS ubuntu-build-deps
 

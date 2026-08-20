@@ -5,13 +5,11 @@ import shutil
 import signal
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 from typing import NoReturn
 from uuid import uuid4
 
 _LOCAL_IMAGE = "astral-dev-toolchain-zygote:local"
-_IMAGE_CONFIG = Path("image/toolchain.toml")
 _ZYGOTE_DOCKERFILE = Path("Dockerfile")
 _ZYGOTE_PACKAGE = Path("packages/astral-dev-toolchain-zygote")
 _CONTAINER_CONFIG = "/app/toolchain-image.toml"
@@ -30,17 +28,6 @@ def _configure_logging(*, verbose: bool) -> None:
     )
 
 
-def _default_bootstrap_image(project_dir: Path) -> str:
-    with (project_dir / _IMAGE_CONFIG).open("rb") as stream:
-        raw = tomllib.load(stream)
-
-    image = raw.get("bootstrap-image")
-    if not isinstance(image, dict):
-        raise ValueError("missing or invalid [bootstrap-image] table")
-
-    return f"{image['repository']}:{image['version']}"
-
-
 def run() -> NoReturn:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -51,7 +38,7 @@ def run() -> NoReturn:
     )
     parser.add_argument(
         "--bootstrap-image",
-        help="Bootstrap image for the local zygote build",
+        help="Bootstrap image for the local zygote build (defaults to GHCR latest)",
     )
     parser.add_argument(
         "--image",
@@ -107,14 +94,9 @@ def _build_zygote(
             parser.error("--bootstrap-image cannot be combined with --image")
         return args.image
 
-    for required in (_IMAGE_CONFIG, _ZYGOTE_DOCKERFILE, _ZYGOTE_PACKAGE):
+    for required in (_ZYGOTE_DOCKERFILE, _ZYGOTE_PACKAGE):
         if not (project_dir / required).exists():
             parser.error(f"repository input does not exist: {project_dir / required}")
-
-    try:
-        bootstrap_image = args.bootstrap_image or _default_bootstrap_image(project_dir)
-    except (KeyError, OSError, ValueError, tomllib.TOMLDecodeError) as error:
-        parser.error(f"invalid image configuration: {error}")
 
     command = [
         docker,
@@ -123,11 +105,13 @@ def _build_zygote(
         str(project_dir / _ZYGOTE_DOCKERFILE),
         "--tag",
         _LOCAL_IMAGE,
-        "--build-arg",
-        f"BOOTSTRAP_IMAGE={bootstrap_image}",
-        str(project_dir),
     ]
-    logger.info("building local zygote image from %s", bootstrap_image)
+    if args.bootstrap_image:
+        command.extend(["--build-arg", f"BOOTSTRAP_IMAGE={args.bootstrap_image}"])
+        logger.info("building local zygote image from %s", args.bootstrap_image)
+    else:
+        logger.info("building local zygote image from the latest GHCR bootstrap")
+    command.append(str(project_dir))
     logger.debug("running: %s", shlex.join(command))
 
     try:

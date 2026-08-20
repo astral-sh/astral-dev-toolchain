@@ -1,9 +1,5 @@
 version = 1
 
-[bootstrap-image]
-repository = "ghcr.io/astral-sh/astral-dev-toolchain-bootstrap"
-version = "0.0.1"
-
 [rust]
 toolchain = "1.97.1"
 targets = [
