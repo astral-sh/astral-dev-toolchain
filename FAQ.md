@@ -29,15 +29,14 @@ wheels.
 
 [maturin]: https://www.maturin.rs/
 
-The host-side `astral-dev-toolchain` command builds and executes a thin local
-Docker image containing `astral-dev-toolchain-zygote`, which turns the small
-`build.toml` metadata format into maturin builds.
+Under the hood there are three main parts:
 
-That local image derives from a separately versioned, published bootstrap image.
-The bootstrap contains the expensive and slow-moving cross-compilation state:
-system dependencies, Rust targets, the Windows SDK cache, and the macOS SDK.
-Zygote source changes therefore rebuild only a small application layer, while
-tool definitions are mounted at runtime and require no image build at all.
+- A "bootstrap" image (`astral-dev-toolchain-bootstrap`), which contains
+  all of our cross-compilation targets, SDKs, etc.
+- A "zygote" image (`astral-dev-toolchain-zygote`), which includes maturin
+  and the Zig toolchain (which maturin uses for cross builds).
+- A "host" tool (`astral-dev-toolchain`), which is responsible for executing
+  the "zygote" image and sending it toolchain definitions (as `build.toml`).
 
 ## Who is this for?
 
