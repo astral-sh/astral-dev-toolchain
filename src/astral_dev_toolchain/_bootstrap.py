@@ -1,21 +1,13 @@
+from astral_dev_toolchain._constants import RUSTUP_TARGETS
 import dataclasses
 import importlib.metadata
 import os
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
-from shutil import which
 
 _RUSTUP_TOOLCHAIN = "1.97.1"
 
-_RUSTUP_TARGETS = [
-    "aarch64-apple-darwin",
-    "x86_64-apple-darwin",
-    "aarch64-unknown-linux-gnu",
-    "x86_64-unknown-linux-gnu",
-    "aarch64-pc-windows-msvc",
-    "x86_64-pc-windows-msvc",
-]
 
 _XWIN_ARCHES = ["x86_64", "aarch64"]
 
@@ -38,15 +30,6 @@ def _find_bin(bin: str) -> Path:
         raise ValueError(f"Missing {bin}")
 
     return path
-
-
-def _which(bin: str) -> Path:
-    path = which(bin)
-
-    if not path:
-        raise ValueError(f"missing {bin}")
-
-    return Path(path)
 
 
 @dataclasses.dataclass
@@ -82,7 +65,7 @@ class Bootstrapper:
         self.rustup(["default", _RUSTUP_TOOLCHAIN])
 
         # Install our targets.
-        self.rustup(["target", "add", *_RUSTUP_TARGETS])
+        self.rustup(["target", "add", *RUSTUP_TARGETS])
 
         # Download and cache the Windows SDK and CRT.
         self.cargo_xwin(

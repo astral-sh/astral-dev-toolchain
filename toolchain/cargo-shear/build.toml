@@ -1,0 +1,9 @@
+version = 1
+
+[tool]
+name = "cargo-shear"
+
+[source]
+repo = "https://github.com/Boshen/cargo-shear"
+tag = "v1.13.4"
+commit = "1fdd1d97b964162cc8142c2945e18e0a54cd0f92"

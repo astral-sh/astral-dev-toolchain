@@ -1,3 +1,5 @@
+from astral_dev_toolchain._build import Builder
+from astral_dev_toolchain._plan import Plan
 import argparse
 import sys
 from pathlib import Path
@@ -33,6 +35,12 @@ def run() -> NoReturn:
     # `astral-dev-toolchain build`
     build = subcmds.add_parser("build")
     build.set_defaults(func=_do_build)
+    build.add_argument(
+        "--output-dir",
+        type=Path,
+        default="/dist",
+        help="The output directory to write wheels into. Note that this is a container-side path; you probably don't need to modify it.",
+    )
 
     args = parser.parse_args()
 
@@ -48,7 +56,6 @@ def _do_bootstrap(parser: argparse.ArgumentParser, args: argparse.Namespace):
 
     bootstrapper = Bootstrapper.discover()
     bootstrapper.bootstrap()
-    print(bootstrapper)
 
 
 def _do_build(parser: argparse.ArgumentParser, args: argparse.Namespace):
@@ -59,5 +66,11 @@ def _do_build(parser: argparse.ArgumentParser, args: argparse.Namespace):
     if not args.toolchain_dir.is_dir():
         parser.error(f"toolchain directory does not exist: {args.toolchain_dir}")
 
+    # TODO: Plumb --dry-run here.
+    plan = Plan.load(args)
     toolchain = Toolchain.load(args.toolchain_dir)
-    print(toolchain)
+
+    # TODO: --select a subset of tools here.
+    for tool in toolchain.tools:
+        builder = Builder(plan=plan, tool=tool)
+        builder.build()

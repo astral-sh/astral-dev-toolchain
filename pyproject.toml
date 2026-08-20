@@ -10,6 +10,7 @@ dependencies = [
     "maturin>=1.14.1",
     "pydantic>=2.13.4",
     "rustup>=1.29.0.1",
+    "tomli-w>=1.2.0",
     "ziglang>=0.16.0",
 ]
 

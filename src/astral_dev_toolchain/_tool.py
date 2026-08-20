@@ -17,6 +17,7 @@ class Tool(BaseModel):
     version: Literal[1]
     tool: ToolSpec
     source: ToolSource
+    build: BuildSpec | None = None
 
     @classmethod
     def load(cls, path: Path) -> Tool:
@@ -24,6 +25,11 @@ class Tool(BaseModel):
             raw = tomllib.load(io)
 
         return Tool.model_validate(raw)
+
+    @property
+    def python_package_name(self) -> str:
+        # TODO: Probably need to validate and/or normalize the name here.
+        return f"astral-dev-toolchain-{self.tool.name}"
 
 
 class ToolSpec(BaseModel):
@@ -34,3 +40,7 @@ class ToolSource(BaseModel):
     repo: StrictStr
     commit: StrictStr
     tag: StrictStr
+
+
+class BuildSpec(BaseModel):
+    manifest: StrictStr

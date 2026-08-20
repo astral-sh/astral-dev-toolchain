@@ -2,15 +2,33 @@
 Operation planning.
 """
 
+import argparse
+
 from dataclasses import dataclass
 from pathlib import Path
+from shutil import which
 
-from astral_dev_toolchain._toolchain import Toolchain
+
+def _which(bin: str) -> Path:
+    path = which(bin)
+
+    if not path:
+        raise ValueError(f"missing {bin}")
+
+    return Path(path)
 
 
 @dataclass(kw_only=True)
 class Plan:
     maturin_bin: Path
-    rustup_bin: Path
-    toolchain: Toolchain
+    output_dir: Path
     dry_run: bool
+
+    @classmethod
+    def load(cls, args: argparse.Namespace) -> Plan:
+        if not args.output_dir.is_dir():
+            raise ValueError(f"Not a directory: {args.output_dir}")
+
+        return Plan(
+            maturin_bin=_which("maturin"), output_dir=args.output_dir, dry_run=False
+        )

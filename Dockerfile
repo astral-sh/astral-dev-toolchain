@@ -58,10 +58,10 @@ RUN --mount=type=cache,id=astral-uv,target=/app/.cache/uv \
 # Install the complete project, then bootstrap through its public CLI.
 COPY README.md ./
 COPY src src
-COPY toolchain toolchain
 RUN --mount=type=cache,id=astral-uv,target=/app/.cache/uv \
     uv sync --locked
-RUN uv run astral-dev-toolchain bootstrap
+RUN mkdir toolchain \
+    && uv run astral-dev-toolchain bootstrap
 
 FROM base
 
@@ -83,6 +83,7 @@ COPY --chmod=a+rwX --from=bootstrap ${HOME}/rust ${HOME}/rust
 COPY --chmod=a+rX --from=uv /uv /uvx ${HOME}/.local/bin/
 COPY --chmod=a+rX --from=bootstrap ${HOME}/python ${HOME}/python
 COPY --chmod=a+rX --from=bootstrap ${HOME}/astral-dev-toolchain ${HOME}/astral-dev-toolchain
+COPY --chmod=a+rX toolchain ${HOME}/astral-dev-toolchain/toolchain
 COPY --chmod=a+rwX --from=bootstrap ${HOME}/xwin-cache ${HOME}/xwin-cache
 
 # macOS cross-compilation SDK env vars
@@ -100,3 +101,5 @@ RUN chmod a+w ${HOME}/xwin-cache \
     && uv --version \
     && maturin --version \
     && python-zig version
+
+ENTRYPOINT ["astral-dev-toolchain"]
