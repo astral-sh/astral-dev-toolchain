@@ -26,6 +26,16 @@ class Builder:
     def _prepare(self) -> Path:
         with TemporaryDirectory(delete=False) as tempdir:
             tempdir = Path(tempdir)
+
+            # Build up our directory structure. Roughly:
+            #
+            # {tmpdir}
+            # |
+            # |- builder/
+            # | |
+            # | |- pyproject.toml (generated)
+            # |
+            # |- src/ (git clone contents)
             builder_dir = tempdir / "builder"
             builder_dir.mkdir()
             src_dir = tempdir / "src"
