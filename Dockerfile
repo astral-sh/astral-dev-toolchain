@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
 ARG UV_VERSION=0.12.5
+ARG GO_VERSION=1.26.6
 ARG UBUNTU_SNAPSHOT=20260127T200000Z
 ARG MACOSX_SDK_SHA=041600eda65c6a668f66cb7d56b7d1da3e8bcc93
 # Users can override this through the host CLI's --bootstrap-image option.
@@ -52,6 +53,8 @@ RUN --mount=type=tmpfs,target=/tmp/scratch \
     && mv MacOSX11.3.sdk /app/macos-sdk
 
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
+
+FROM golang:${GO_VERSION} AS go
 
 # Install the pinned Python independently from either Python package.
 FROM base AS python
@@ -107,6 +110,10 @@ FROM provisioned AS bootstrap-image
 
 ARG TARGETARCH
 
+COPY --from=go /usr/local/go /usr/local/go
+ENV PATH="/usr/local/go/bin:${PATH}"
+ENV GOTOOLCHAIN=local
+
 # Install manually allowlisted build dependencies.
 # llvm provides llvm-mt, which lld-link expects as mt.exe for manifest embedding.
 # Clang provides clang-cl for Windows builds.
@@ -131,6 +138,7 @@ ENV CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS="-C link-arg=-F${SDKROOT}/System
 
 RUN cargo --version \
     && rustc --version \
+    && go version \
     && uv --version \
     && clang --version \
     && command -v llvm-mt

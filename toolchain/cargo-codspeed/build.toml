@@ -1,12 +1,11 @@
 version = 1
 
 [tool]
+backend = "rust"
 name = "cargo-codspeed"
+manifest = "crates/cargo-codspeed/Cargo.toml"
 
 [source]
 repo = "https://github.com/CodSpeedHQ/codspeed-rust"
 tag = "v5.0.1"
 commit = "69f74b65cb10ddf68e381ccafdaa300c2e8969da"
-
-[build]
-manifest = "crates/cargo-codspeed/Cargo.toml"

@@ -1,13 +1,12 @@
 version = 1
 
 [tool]
+backend = "rust"
 name = "cargo-insta"
+# insta's repo root is a workdir, `cargo-insta` lives in a subdir
+manifest = "cargo-insta/Cargo.toml"
 
 [source]
 repo = "https://github.com/mitsuhiko/insta"
 tag = "1.48.0"
 commit = "7f23d2e4684a789a85c50503004fb38a23c9ea58"
-
-[build]
-# insta's repo root is a workdir, `cargo-insta` lives in a subdir
-manifest = "cargo-insta/Cargo.toml"

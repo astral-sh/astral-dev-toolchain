@@ -1,16 +1,15 @@
 version = 1
 
 [tool]
+backend = "rust"
 name = "cargo-nextest"
-
-[source]
-repo = "https://github.com/nextest-rs/nextest"
-tag = "cargo-nextest-0.9.143"
-commit = "60fa45f638ffc3f35e74afa65737f45fcd32db2a"
-
-[build]
 manifest = "cargo-nextest/Cargo.toml"
 # nextest enables usdt by default; usdt has a proc macro
 # that generates assembly for the build host rather than the target.
 # see: https://github.com/oxidecomputer/usdt/issues/459
 no-default-features = true
+
+[source]
+repo = "https://github.com/nextest-rs/nextest"
+tag = "cargo-nextest-0.9.143"
+commit = "60fa45f638ffc3f35e74afa65737f45fcd32db2a"
