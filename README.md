@@ -26,6 +26,8 @@ Build everything:
 uv run astral-dev-toolchain build
 ```
 
+Build artifacts are written to `toolchain-dist/` by default.
+
 Build a specific tool:
 
 ```shell
