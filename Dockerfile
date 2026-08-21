@@ -65,6 +65,7 @@ FROM python AS bootstrap-deps
 
 ARG TARGETARCH
 WORKDIR ${HOME}/bootstrap-workspace
+ENV PATH="${HOME}/bootstrap-workspace/.venv/bin:${CARGO_HOME}/bin:${PATH}"
 
 COPY .python-version pyproject.toml uv.lock ./
 COPY packages/astral-dev-toolchain-bootstrap/pyproject.toml packages/astral-dev-toolchain-bootstrap/pyproject.toml
@@ -127,8 +128,6 @@ ENV CFLAGS_aarch64_apple_darwin="-isystem ${SDKROOT}/usr/include -iframework ${S
 ENV CARGO_TARGET_X86_64_APPLE_DARWIN_RUSTFLAGS="-C link-arg=-F${SDKROOT}/System/Library/Frameworks -C link-arg=-L${SDKROOT}/usr/lib"
 ENV CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS="-C link-arg=-F${SDKROOT}/System/Library/Frameworks -C link-arg=-L${SDKROOT}/usr/lib"
 
-ENV PATH="${CARGO_HOME}/bin:${PATH}"
-
 RUN cargo --version \
     && rustc --version \
     && uv --version \
@@ -153,7 +152,7 @@ RUN --mount=type=cache,id=astral-uv-${TARGETARCH},target=/app/.cache/uv,sharing=
         --package astral-dev-toolchain-zygote \
         --no-editable
 
-ENV PATH="${HOME}/zygote-workspace/.venv/bin:${CARGO_HOME}/bin:${PATH}"
+ENV PATH="${HOME}/zygote-workspace/.venv/bin:${PATH}"
 
 RUN maturin --version \
     && python-zig version \
