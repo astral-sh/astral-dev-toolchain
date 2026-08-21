@@ -5,6 +5,7 @@ description = "Container-side builder for the Astral development toolchain"
 authors = [{ name = "William Woodruff", email = "william@yossarian.net" }]
 requires-python = ">=3.14"
 dependencies = [
+    "go-to-wheel==0.2",
     "maturin>=1.14.1",
     "pydantic>=2.13.4",
     "tomli-w>=1.2.0",

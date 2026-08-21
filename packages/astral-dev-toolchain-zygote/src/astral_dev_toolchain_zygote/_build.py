@@ -1,22 +1,14 @@
-import json
-import logging
-import shlex
+"""Check out tool sources and dispatch to the appropriate build backend."""
+
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import tomli_w
-
+from ._build_go import GoBuilder
+from ._build_rust import RustBuilder
 from ._plan import Plan
-from ._tool import Tool
-
-_PYPROJECT_SKELETON: dict = {
-    "build-system": {"requires": ["maturin>=1,<2"], "build-backend": "maturin"},
-    "tool": {"maturin": {"bindings": "bin"}},
-}
-
-logger = logging.getLogger(__name__)
+from ._tool import GoToolSpec, RustToolSpec, Tool
 
 
 @dataclass
@@ -24,109 +16,34 @@ class Builder:
     plan: Plan
     tool: Tool
 
-    def _prepare(self) -> Path:
-        with TemporaryDirectory(delete=False) as tempdir:
-            tempdir = Path(tempdir)
-
-            # Build up our directory structure. Roughly:
-            #
-            # {tmpdir}
-            # |
-            # |- builder/
-            # | |
-            # | |- pyproject.toml (generated)
-            # |
-            # |- src/ (git clone contents)
-            builder_dir = tempdir / "builder"
-            builder_dir.mkdir()
-            src_dir = tempdir / "src"
-            src_dir.mkdir()
-
-            subprocess.run(
-                [
-                    self.plan.git_bin,
-                    "clone",
-                    "--branch",
-                    self.tool.source.tag,
-                    "--depth",
-                    "1",
-                    self.tool.source.repo,
-                    ".",
-                ],
-                check=True,
-                cwd=src_dir,
-            )
-            # TODO: Confirm the checkout matches `self.tool.source.commit`.
-
-            if build := self.tool.build:
-                manifest_path = src_dir / build.manifest
-            else:
-                manifest_path = src_dir / "Cargo.toml"
-
-            pyproject = dict(**_PYPROJECT_SKELETON)
-            project = {"name": self.tool.python_package_name}
-
-            if not self.tool.tool.version:
-                result = subprocess.run(
-                    [
-                        self.plan.cargo_bin,
-                        "metadata",
-                        "--format-version",
-                        "1",
-                        "--no-deps",
-                        "--manifest-path",
-                        manifest_path,
-                    ],
-                    check=True,
-                    cwd=src_dir,
-                    stdout=subprocess.PIPE,
-                    text=True,
-                )
-                metadata = json.loads(result.stdout)
-                for package in metadata["packages"]:
-                    if (
-                        Path(package["manifest_path"]).resolve()
-                        == manifest_path.resolve()
-                    ):
-                        project["version"] = package["version"]
-                        break
-                else:
-                    raise ValueError(f"no package found for manifest: {manifest_path}")
-            else:
-                project["version"] = self.tool.tool.version
-
-            pyproject["project"] = project
-
-            pyproject["tool"]["maturin"]["manifest-path"] = str(manifest_path)
-            (builder_dir / "pyproject.toml").write_text(tomli_w.dumps(pyproject))
-
-        return tempdir
-
     def build(self) -> None:
-        prepared_dir = self._prepare()
+        with TemporaryDirectory() as tempdir:
+            src_dir = Path(tempdir) / "src"
+            build_dir = Path(tempdir) / "builder"
+            src_dir.mkdir()
+            build_dir.mkdir()
+            self._checkout(src_dir)
 
-        for target in self.plan.targets:
-            command = [self.plan.maturin_bin, "build"]
+            package_name = self.tool.python_package_name
+            match self.tool.tool:
+                case GoToolSpec() as spec:
+                    GoBuilder(self.plan, spec, package_name).build(src_dir, build_dir)
+                case RustToolSpec() as spec:
+                    RustBuilder(self.plan, spec, package_name).build(src_dir, build_dir)
 
-            if self.tool.build and self.tool.build.no_default_features:
-                command.append("--no-default-features")
-
-            command.extend(
-                [
-                    "--release",
-                    "--target",
-                    target,
-                    "--zig",
-                    "--out",
-                    self.plan.output_dir,
-                ]
-            )
-
-            if self.plan.dry_run:
-                logger.info(
-                    "[dry-run] would have run: '%s' in '%s'",
-                    shlex.join([str(arg) for arg in command]),
-                    prepared_dir / "builder",
-                )
-            else:
-                subprocess.run(command, check=True, cwd=prepared_dir / "builder")
+    def _checkout(self, src_dir: Path) -> None:
+        subprocess.run(
+            [
+                self.plan.git_bin,
+                "clone",
+                "--branch",
+                self.tool.source.tag,
+                "--depth",
+                "1",
+                self.tool.source.repo,
+                ".",
+            ],
+            check=True,
+            cwd=src_dir,
+        )
+        # TODO: Confirm the checkout matches `self.tool.source.commit`.

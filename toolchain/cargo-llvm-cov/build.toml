@@ -1,6 +1,7 @@
 version = 1
 
 [tool]
+backend = "rust"
 name = "cargo-llvm-cov"
 
 [source]

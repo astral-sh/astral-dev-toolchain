@@ -73,6 +73,7 @@ name = "astral-dev-toolchain-zygote"
 version = "0.1.0"
 source = { editable = "packages/astral-dev-toolchain-zygote" }
 dependencies = [
+    { name = "go-to-wheel" },
     { name = "maturin" },
     { name = "pydantic" },
     { name = "tomli-w" },
@@ -81,6 +82,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "go-to-wheel", specifier = "==0.2" },
     { name = "maturin", specifier = ">=1.14.1" },
     { name = "pydantic", specifier = ">=2.13.4" },
     { name = "tomli-w", specifier = ">=1.2.0" },
@@ -102,6 +104,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/16/ed/4114970accb1a6790913d6c59a1ccc53ccda3727023836a0a1aa1be98bd2/cargo_xwin-0.23.1-py3-none-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:76ae35181f7df60c76b3d37926a4a06d668267259f543a7e20db4b47c8b177e1", size = 3978085, upload-time = "2026-08-13T11:27:13.504Z" },
     { url = "https://files.pythonhosted.org/packages/2c/34/ca10243381fe2a4e0d93a6c73f128c9fe314e44220227a160cc12a580293/cargo_xwin-0.23.1-py3-none-win32.whl", hash = "sha256:3f542c3feb00cc02ad1251b7a65d174d06b1aaf60c04b1a5ca4303aa1254c9cb", size = 3099969, upload-time = "2026-08-13T11:27:14.918Z" },
     { url = "https://files.pythonhosted.org/packages/f0/10/a0b26c45dcdcf2f273a715b60be5f3120e12b36ef554deeba9df4fe07191/cargo_xwin-0.23.1-py3-none-win_amd64.whl", hash = "sha256:bf427c390694520f046ee70510d171b30d902c49c04d0135611bfc48403ad6f8", size = 3640588, upload-time = "2026-08-13T11:27:16.298Z" },
+]
+
+[[package]]
+name = "go-to-wheel"
+version = "0.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/7f/c2/c6e468bb65e549913094b40ad64eec4d750d8f47bb9d16184a7462c916b0/go_to_wheel-0.2.tar.gz", hash = "sha256:4c7d3906e1f48e759a3e297570ed9514d9948dd66feb351732e344347a0b9945", size = 17731, upload-time = "2026-02-04T04:28:04.546Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/da/5a/0cdd968c17240c24760ffb6b2ae6ea2b960ca404eeaa509bf3e1b98b23bf/go_to_wheel-0.2-py3-none-any.whl", hash = "sha256:efc6c9b8b1ea6074cc2679820b5b5d47197ef9172e1169fb332caab5ebbf62c0", size = 11964, upload-time = "2026-02-04T04:28:03.115Z" },
 ]
 
 [[package]]

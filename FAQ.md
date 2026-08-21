@@ -23,18 +23,18 @@ _as long_ as they are shaped like Python wheels.
 
 ## How does it work?
 
-astral-dev-toolchain essentially wraps [maturin], which in turn wraps
-several other things, to munge freestanding Rust binary builds into
-wheels.
+astral-dev-toolchain wraps [maturin] for Rust tools and [go-to-wheel] for
+CGO-disabled Go tools to package their binary builds as Python wheels.
 
 [maturin]: https://www.maturin.rs/
+[go-to-wheel]: https://github.com/simonw/go-to-wheel
 
 Under the hood there are three main parts:
 
 - A "bootstrap" image (`astral-dev-toolchain-bootstrap`), which contains
-  all of our cross-compilation targets, SDKs, etc.
-- A "zygote" image (`astral-dev-toolchain-zygote`), which includes maturin
-  and the Zig toolchain (which maturin uses for cross builds).
+  the Rust and Go compilers, cross-compilation targets, and SDKs.
+- A "zygote" image (`astral-dev-toolchain-zygote`), which includes maturin,
+  go-to-wheel, and the Zig toolchain (which maturin uses for cross builds).
 - A "host" tool (`astral-dev-toolchain`), which is responsible for executing
   the "zygote" image and sending it toolchain definitions (as `build.toml`).
 
