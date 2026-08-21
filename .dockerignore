@@ -2,6 +2,7 @@
 .venv
 Dockerfile.orig
 dist
+toolchain-dist
 packages/astral-dev-toolchain
 toolchain
 **/__pycache__/

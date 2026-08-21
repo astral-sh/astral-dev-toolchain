@@ -79,8 +79,8 @@ def run() -> None:
     build.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("dist"),
-        help="Host directory to write wheels into",
+        default=Path("toolchain-dist"),
+        help="Host directory to write wheels into (default: ./toolchain-dist)",
     )
 
     args = parser.parse_args()
