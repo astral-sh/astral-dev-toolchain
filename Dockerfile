@@ -12,12 +12,14 @@ ARG TARGETARCH
 ARG UBUNTU_SNAPSHOT
 
 # ca-certificates are required before using the snapshot.
-RUN --mount=type=cache,id=astral-ubuntu-apt-lists-${TARGETARCH}-v3,target=/var/lib/apt/lists,sharing=locked \
+RUN --mount=type=cache,id=astral-ubuntu-apt-lists-${TARGETARCH}-v4,target=/var/lib/apt/lists,sharing=locked \
     --mount=type=cache,id=astral-ubuntu-apt-archives-${TARGETARCH}-v1,target=/var/cache/apt,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean \
     && DEBIAN_FRONTEND=noninteractive apt install -y --update ca-certificates \
-    && apt update --snapshot ${UBUNTU_SNAPSHOT} \
-    && DEBIAN_FRONTEND=noninteractive apt install -y --snapshot ${UBUNTU_SNAPSHOT} \
+    && sed -i "s|^URIs: .*|URIs: https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/|" \
+        /etc/apt/sources.list.d/ubuntu.sources \
+    && apt update \
+    && DEBIAN_FRONTEND=noninteractive apt install -y \
         curl \
         git
 
@@ -104,15 +106,14 @@ RUN --mount=type=cache,id=astral-bootstrap-${TARGETARCH}-v1,target=/var/cache/as
 FROM provisioned AS bootstrap-image
 
 ARG TARGETARCH
-ARG UBUNTU_SNAPSHOT
 
 # Install manually allowlisted build dependencies.
 # llvm provides llvm-mt, which lld-link expects as mt.exe for manifest embedding.
 # Clang provides clang-cl for Windows builds.
-RUN --mount=type=cache,id=astral-ubuntu-runtime-apt-lists-${TARGETARCH}-v1,target=/var/lib/apt/lists,sharing=locked \
+RUN --mount=type=cache,id=astral-ubuntu-runtime-apt-lists-${TARGETARCH}-v2,target=/var/lib/apt/lists,sharing=locked \
     --mount=type=cache,id=astral-ubuntu-apt-archives-${TARGETARCH}-v1,target=/var/cache/apt,sharing=locked \
-    apt update --snapshot ${UBUNTU_SNAPSHOT} \
-    && DEBIAN_FRONTEND=noninteractive apt install -y --snapshot ${UBUNTU_SNAPSHOT} \
+    apt update \
+    && DEBIAN_FRONTEND=noninteractive apt install -y \
         build-essential \
         llvm \
         clang \
