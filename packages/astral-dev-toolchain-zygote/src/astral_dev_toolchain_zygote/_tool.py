@@ -16,7 +16,11 @@ class _Model(BaseModel):
 
 
 class Tool(_Model):
-    version: Literal[1]
+    """
+    Represents a tool definition in a `build.toml` file.
+    """
+
+    version: Literal[1] = 1
     tool: ToolSpec
     source: ToolSource
     build: BuildSpec | None = None
@@ -34,15 +38,51 @@ class Tool(_Model):
 
 
 class ToolSpec(_Model):
+    """
+    A tool "spec" contains information that affects wheel metadata for the tool
+    being built.
+    """
+
     name: StrictStr
+    """
+    The tool's package name.
+
+    This does not affect binary names; it serves as the suffix for the package name.
+    For example, a tool named `foo` will become `astral-dev-toolchain-foo`.
+    """
+
+    version: str | None = None
+    """
+    The tool's package version.
+
+    By default, this is extracted from the tool's source tree using `cargo metadata`.
+    However, it can be explicitly overridden as well.
+    """
 
 
 class ToolSource(_Model):
+    """
+    The tool's source origin. This is used to fetch the tool for building.
+    """
+
     repo: StrictStr
     commit: StrictStr
     tag: StrictStr
 
 
 class BuildSpec(_Model):
+    """
+    The tool's build specification. This is used to tweak the tool's build.
+    """
+
     manifest: StrictStr
+    """
+    This is a relative path (within the source checkout) to the tool's `Cargo.toml`,
+    if the source checkout uses a workspace-style layout or otherwise doesn't expose the
+    right `Cargo.toml` at the repo root.
+    """
+
     no_default_features: StrictBool = False
+    """
+    Whether to pass `--no-default-features` to the build.
+    """
