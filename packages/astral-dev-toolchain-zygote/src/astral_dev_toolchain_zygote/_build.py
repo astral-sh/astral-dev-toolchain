@@ -18,6 +18,16 @@ class Builder:
 
     def build(self) -> None:
         with TemporaryDirectory() as tempdir:
+            # Build up our directory structure. Roughly:
+            #
+            # {tmpdir}
+            # |
+            # |- builder/
+            # | |
+            # | |- pyproject.toml (generated for Rust builds)
+            # | |- <tool>[.exe] (compiled binary for Go builds)
+            # |
+            # |- src/ (git clone contents)
             src_dir = Path(tempdir) / "src"
             build_dir = Path(tempdir) / "builder"
             src_dir.mkdir()
