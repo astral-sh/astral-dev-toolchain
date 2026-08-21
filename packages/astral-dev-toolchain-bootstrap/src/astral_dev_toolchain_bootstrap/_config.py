@@ -34,6 +34,6 @@ class ImageConfig(_ConfigModel):
     xwin: XwinConfig
 
     @classmethod
-    def load(cls, path: Path) -> "ImageConfig":
+    def load(cls, path: Path) -> ImageConfig:
         with path.open("rb") as stream:
             return cls.model_validate(tomllib.load(stream))

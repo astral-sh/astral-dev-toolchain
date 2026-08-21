@@ -27,7 +27,7 @@ class Plan:
     targets: tuple[str, ...]
 
     @classmethod
-    def load(cls, args: argparse.Namespace, config: ImageConfig) -> "Plan":
+    def load(cls, args: argparse.Namespace, config: ImageConfig) -> Plan:
         if not args.output_dir.is_dir():
             raise ValueError(f"not a directory: {args.output_dir}")
 

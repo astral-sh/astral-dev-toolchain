@@ -13,3 +13,9 @@ astral-dev-toolchain = { workspace = true }
 
 [tool.uv.workspace]
 members = ["packages/*"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.3",
+    "ty>=0.0.71",
+]

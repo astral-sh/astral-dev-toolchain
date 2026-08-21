@@ -12,7 +12,7 @@ class Toolchain:
     tools: list[Tool]
 
     @classmethod
-    def load(cls, plan: Plan) -> "Toolchain":
+    def load(cls, plan: Plan) -> Toolchain:
         tools = []
 
         for tool_dir in plan.toolchain_dir.iterdir():

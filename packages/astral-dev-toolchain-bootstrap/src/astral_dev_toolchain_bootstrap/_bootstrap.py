@@ -31,7 +31,7 @@ class Bootstrapper:
     rustup_path: Path
 
     @classmethod
-    def discover(cls) -> "Bootstrapper":
+    def discover(cls) -> Bootstrapper:
         return cls(
             cargo_xwin_path=_find_bin("cargo-xwin"),
             rustup_path=_find_bin("rustup"),

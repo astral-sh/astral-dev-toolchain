@@ -17,12 +17,12 @@ class _Model(BaseModel):
 
 class Tool(_Model):
     version: Literal[1]
-    tool: "ToolSpec"
-    source: "ToolSource"
-    build: "BuildSpec | None" = None
+    tool: ToolSpec
+    source: ToolSource
+    build: BuildSpec | None = None
 
     @classmethod
-    def load(cls, path: Path) -> "Tool":
+    def load(cls, path: Path) -> Tool:
         with path.open(mode="rb") as stream:
             raw = tomllib.load(stream)
 
