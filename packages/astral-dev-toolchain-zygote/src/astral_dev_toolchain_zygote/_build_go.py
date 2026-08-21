@@ -3,7 +3,6 @@
 import logging
 from dataclasses import dataclass
 from pathlib import Path
-from shutil import which
 
 from go_to_wheel import build_wheel, compile_go_binary
 
@@ -38,9 +37,6 @@ class GoBuilder:
     package_name: str
 
     def build(self, src_dir: Path, build_dir: Path) -> None:
-        go_bin = which("go")
-        if go_bin is None:
-            raise ValueError("missing go: Go builds require Go on PATH")
         for target in self.plan.targets:
             if target not in _TARGETS:
                 raise ValueError(f"unsupported Go build target: {target}")
@@ -51,10 +47,10 @@ class GoBuilder:
             suffix = ".exe" if platform.goos == "windows" else ""
             binary = build_dir / f"{self.spec.name}{suffix}"
             if self.plan.dry_run:
-                self._log_dry_run(go_bin, go_dir, binary, platform)
+                self._log_dry_run(go_dir, binary, platform)
             else:
                 logger.info("building %s for %s", self.spec.name, target)
-                self._build_target(go_bin, go_dir, binary, platform)
+                self._build_target(go_dir, binary, platform)
 
     def _package_directory(self, src_dir: Path) -> Path:
         src_dir = src_dir.resolve()
@@ -75,15 +71,13 @@ class GoBuilder:
             return f"-X {self.spec.version_var}={self.spec.version}"
         return None
 
-    def _build_target(
-        self, go_bin: str, go_dir: Path, binary: Path, platform: _Target
-    ) -> None:
+    def _build_target(self, go_dir: Path, binary: Path, platform: _Target) -> None:
         compile_go_binary(
             go_dir=str(go_dir),
             output_path=str(binary),
             goos=platform.goos,
             goarch=platform.goarch,
-            go_binary=go_bin,
+            go_binary=str(self.plan.go_bin),
             ldflags=self._ldflags,
         )
         wheel = build_wheel(
@@ -97,9 +91,7 @@ class GoBuilder:
         )
         logger.info("built %s", wheel)
 
-    def _log_dry_run(
-        self, go_bin: str, go_dir: Path, binary: Path, platform: _Target
-    ) -> None:
+    def _log_dry_run(self, go_dir: Path, binary: Path, platform: _Target) -> None:
         ldflags = "-s -w"
         if extra_flags := self._ldflags:
             ldflags += f" {extra_flags}"
@@ -107,7 +99,7 @@ class GoBuilder:
             "[dry-run] would compile '%s' with '%s' for %s/%s "
             "(CGO_ENABLED=0, ldflags=%r) to '%s'",
             go_dir,
-            go_bin,
+            self.plan.go_bin,
             platform.goos,
             platform.goarch,
             ldflags,

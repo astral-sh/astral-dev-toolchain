@@ -25,6 +25,7 @@ class Plan:
     git_bin: Path
     cargo_bin: Path
     maturin_bin: Path
+    go_bin: Path
     toolchain_dir: Path
     output_dir: Path
     dry_run: bool
@@ -40,6 +41,7 @@ class Plan:
             git_bin=_which("git"),
             cargo_bin=_which("cargo"),
             maturin_bin=_which("maturin"),
+            go_bin=_which("go"),
             toolchain_dir=args.toolchain_dir,
             output_dir=args.output_dir,
             selected_tools=set(args.select),
