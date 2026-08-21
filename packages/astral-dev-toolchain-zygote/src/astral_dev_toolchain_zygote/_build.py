@@ -44,7 +44,7 @@ class Builder:
 
             subprocess.run(
                 [
-                    "git",
+                    self.plan.git_bin,
                     "clone",
                     "--branch",
                     self.tool.source.tag,
@@ -69,13 +69,13 @@ class Builder:
             if not self.tool.tool.version:
                 result = subprocess.run(
                     [
-                        "cargo",
+                        self.plan.cargo_bin,
                         "metadata",
                         "--format-version",
                         "1",
                         "--no-deps",
                         "--manifest-path",
-                        str(manifest_path),
+                        manifest_path,
                     ],
                     check=True,
                     cwd=src_dir,
