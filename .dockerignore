@@ -1,5 +1,8 @@
 .git
 .venv
+Dockerfile.orig
 dist
+packages/astral-dev-toolchain
+toolchain
 **/__pycache__/
 **/*.py[cod]

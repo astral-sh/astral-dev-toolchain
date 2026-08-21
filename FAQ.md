@@ -29,10 +29,14 @@ wheels.
 
 [maturin]: https://www.maturin.rs/
 
-The only real innovation here is a (very large) Docker image that provides
-cross-compilation support for our targets, along with a small metadata format
-(`build.toml`) that tells astral-dev-toolchain how to transform a given
-tool into a set of wheels.
+Under the hood there are three main parts:
+
+- A "bootstrap" image (`astral-dev-toolchain-bootstrap`), which contains
+  all of our cross-compilation targets, SDKs, etc.
+- A "zygote" image (`astral-dev-toolchain-zygote`), which includes maturin
+  and the Zig toolchain (which maturin uses for cross builds).
+- A "host" tool (`astral-dev-toolchain`), which is responsible for executing
+  the "zygote" image and sending it toolchain definitions (as `build.toml`).
 
 ## Who is this for?
 

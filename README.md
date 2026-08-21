@@ -14,20 +14,35 @@ TODO.
 
 ## Development
 
-Bootstrap the toolchain environment:
+Install the host-side CLI:
 
 ```shell
-docker build -t astral-dev-toolchain .
+uv sync --locked
 ```
 
-Build everything (very slow):
+Build everything:
 
 ```shell
-docker run --rm -it -v "$(pwd)/dist:/dist" astral-dev-toolchain build
+uv run astral-dev-toolchain build
 ```
 
 Build a specific tool:
 
+```shell
+uv run astral-dev-toolchain build --select just
 ```
-docker run --rm -it -v "$(pwd)/dist:/dist" astral-dev-toolchain build --select just
+
+See `--help` for additional options.
+
+### Developing the bootstrap image
+
+```shell
+docker build \
+    --target bootstrap-image \
+    --tag astral-dev-toolchain-bootstrap:dev \
+    .
+
+uv run astral-dev-toolchain \
+    --bootstrap-image astral-dev-toolchain-bootstrap:dev \
+    build --dry-run --select just
 ```

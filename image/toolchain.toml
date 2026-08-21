@@ -1,0 +1,20 @@
+version = 1
+
+[rust]
+toolchain = "1.97.1"
+targets = [
+    "aarch64-apple-darwin",
+    "x86_64-apple-darwin",
+    "aarch64-unknown-linux-gnu",
+    "x86_64-unknown-linux-gnu",
+    "aarch64-pc-windows-msvc",
+    "x86_64-pc-windows-msvc",
+]
+
+[xwin]
+architectures = ["x86_64", "aarch64"]
+sdk-version = "10.0.22621"
+crt-version = "14.44.17.14"
+http-retries = 10
+include-debug-libs = true
+include-debug-symbols = true
