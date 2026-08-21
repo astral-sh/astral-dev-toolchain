@@ -36,10 +36,14 @@ class Builder:
 
             package_name = self.tool.python_package_name
             match self.tool.tool:
-                case GoToolSpec() as spec:
-                    GoBuilder(self.plan, spec, package_name).build(src_dir, build_dir)
-                case RustToolSpec() as spec:
-                    RustBuilder(self.plan, spec, package_name).build(src_dir, build_dir)
+                case GoToolSpec():
+                    go_builder = GoBuilder.prepare(self.plan, self.tool, package_name)
+                    go_builder.build(src_dir, build_dir)
+                case RustToolSpec():
+                    rust_builder = RustBuilder.prepare(
+                        self.plan, self.tool, package_name
+                    )
+                    rust_builder.build(src_dir, build_dir)
 
     def _checkout(self, src_dir: Path) -> None:
         subprocess.run(

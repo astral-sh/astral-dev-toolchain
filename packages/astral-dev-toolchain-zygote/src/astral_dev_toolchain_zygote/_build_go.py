@@ -2,12 +2,14 @@
 
 import logging
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 
 from go_to_wheel import build_wheel, compile_go_binary
+from packaging.version import Version
 
 from ._plan import Plan
-from ._tool import GoToolSpec
+from ._tool import GoToolSpec, Tool
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +35,24 @@ _TARGETS = {
 @dataclass
 class GoBuilder:
     plan: Plan
-    spec: GoToolSpec
+    tool: Tool[GoToolSpec]
     package_name: str
+
+    @classmethod
+    def prepare(
+        cls, plan: Plan, tool: Tool[GoToolSpec], package_name: str
+    ) -> GoBuilder:
+        return cls(plan=plan, tool=tool, package_name=package_name)
+
+    @cached_property
+    def version(self) -> Version:
+        """
+        Creates a proper PEP 440 version, including any postrelease number.
+        """
+        base = Version(self.tool.tool.version)
+        if self.tool.tool.rebuild:
+            base = base.__replace__(post=self.tool.tool.rebuild)
+        return base
 
     def build(self, src_dir: Path, build_dir: Path) -> None:
         for target in self.plan.targets:
@@ -45,17 +63,17 @@ class GoBuilder:
         for target in self.plan.targets:
             platform = _TARGETS[target]
             suffix = ".exe" if platform.goos == "windows" else ""
-            binary = build_dir / f"{self.spec.name}{suffix}"
+            binary = build_dir / f"{self.tool.tool.name}{suffix}"
             if self.plan.dry_run:
                 self._log_dry_run(go_dir, binary, platform)
             else:
-                logger.info("building %s for %s", self.spec.name, target)
+                logger.info("building %s for %s", self.tool.tool.name, target)
                 self._build_target(go_dir, binary, platform)
 
     def _package_directory(self, src_dir: Path) -> Path:
         src_dir = src_dir.resolve()
-        go_dir = (src_dir / self.spec.directory).resolve()
-        if Path(self.spec.directory).is_absolute() or not go_dir.is_relative_to(
+        go_dir = (src_dir / self.tool.tool.directory).resolve()
+        if Path(self.tool.tool.directory).is_absolute() or not go_dir.is_relative_to(
             src_dir
         ):
             raise ValueError(
@@ -67,8 +85,10 @@ class GoBuilder:
 
     @property
     def _ldflags(self) -> str | None:
-        if self.spec.version_var:
-            return f"-X {self.spec.version_var}={self.spec.version}"
+        if self.tool.tool.version_var:
+            # NOTE: Intentionally uses the verbatim configured version,
+            # since this appears in the Go binary and not the Python metadata.
+            return f"-X {self.tool.tool.version_var}={self.tool.tool.version}"
         return None
 
     def _build_target(self, go_dir: Path, binary: Path, platform: _Target) -> None:
@@ -84,9 +104,10 @@ class GoBuilder:
             binary_path=str(binary),
             output_dir=str(self.plan.output_dir),
             name=self.package_name,
-            version=self.spec.version,
+            # NOTE: Uses the PEP 440 version, including any postrelease modifier.
+            version=str(self.version),
             platform_tag=platform.wheel_tag,
-            entry_point=self.spec.name,
+            entry_point=self.tool.tool.name,
             is_windows=platform.goos == "windows",
         )
         logger.info("built %s", wheel)
@@ -109,7 +130,7 @@ class GoBuilder:
             "[dry-run] would package '%s' as %s %s for %s in '%s'",
             binary,
             self.package_name,
-            self.spec.version,
+            self.tool.tool.version,
             platform.wheel_tag,
             self.plan.output_dir,
         )

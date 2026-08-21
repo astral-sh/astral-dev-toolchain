@@ -9,6 +9,7 @@ from pydantic import (
     ConfigDict,
     Field,
     StrictBool,
+    StrictInt,
     StrictStr,
     StringConstraints,
 )
@@ -33,6 +34,14 @@ class _ToolSpec(_Model):
 
     This does not affect binary names; it serves as the suffix for the package name.
     For example, a tool named `foo` will become `astral-dev-toolchain-foo`.
+    """
+
+    rebuild: StrictInt | None = None
+    """
+    The tool's rebuild number.
+
+    This becomes a "postrelease" number on the Python side, e.g. `1` becomes
+    `{version}.post1`. Most tools will not need rebuilds.
     """
 
 
@@ -87,11 +96,11 @@ class GoToolSpec(_ToolSpec):
 type ToolSpec = Annotated[RustToolSpec | GoToolSpec, Field(discriminator="backend")]
 
 
-class Tool(_Model):
+class Tool[T: ToolSpec](_Model):
     """A tool definition in a `build.toml` file."""
 
     version: Literal[1] = 1
-    tool: ToolSpec
+    tool: T
     source: ToolSource
 
     @classmethod
