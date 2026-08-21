@@ -61,9 +61,6 @@ COPY .python-version ./
 RUN --mount=type=cache,id=astral-uv-${TARGETARCH},target=/app/.cache/uv,sharing=locked \
     uv python install
 
-# Install the small, stable bootstrap member before provisioning the expensive
-# Rust and xwin state. Neither host source, zygote source, nor tool definitions
-# are inputs to this stage.
 FROM python AS bootstrap-deps
 
 ARG TARGETARCH
@@ -89,9 +86,6 @@ FROM bootstrap-deps AS provisioned
 
 ARG TARGETARCH
 
-# The cache mount seeds repeated bootstrap executions, while the copied state is
-# committed to the image. The cache is architecture-specific because rustup's
-# host toolchain is architecture-specific.
 RUN --mount=type=cache,id=astral-bootstrap-${TARGETARCH}-v1,target=/var/cache/astral-bootstrap,sharing=locked \
     mkdir -p \
         /var/cache/astral-bootstrap/rust \
@@ -141,15 +135,10 @@ RUN cargo --version \
     && clang --version \
     && command -v llvm-mt
 
-# The default target is the frequently changing local zygote. It starts from
-# the separately published bootstrap image rather than from the stage above, so
-# normal host CLI invocations never traverse the expensive bootstrap graph.
 FROM ${BOOTSTRAP_IMAGE} AS zygote
 
 ARG TARGETARCH
 
-# Install zygote dependencies independently from zygote source. Source changes
-# therefore invalidate only the final package installation and smoke test.
 WORKDIR ${HOME}/zygote-workspace
 COPY .python-version pyproject.toml uv.lock ./
 COPY packages/astral-dev-toolchain-zygote/pyproject.toml packages/astral-dev-toolchain-zygote/pyproject.toml
@@ -158,7 +147,6 @@ RUN --mount=type=cache,id=astral-uv-${TARGETARCH},target=/app/.cache/uv,sharing=
         --package astral-dev-toolchain-zygote \
         --no-install-workspace
 
-# Zygote source is the final application input.
 COPY --link packages/astral-dev-toolchain-zygote packages/astral-dev-toolchain-zygote
 RUN --mount=type=cache,id=astral-uv-${TARGETARCH},target=/app/.cache/uv,sharing=locked \
     uv sync --frozen \
