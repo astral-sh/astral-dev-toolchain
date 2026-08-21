@@ -14,37 +14,4 @@ TODO.
 
 ## Development
 
-Install the host-side CLI:
-
-```shell
-uv sync --locked
-```
-
-Build everything:
-
-```shell
-uv run astral-dev-toolchain build
-```
-
-Build a specific tool:
-
-```shell
-uv run astral-dev-toolchain build --select just
-```
-
-Build artifacts are written to `toolchain-dist/` by default.
-
-See `--help` for additional options.
-
-### Developing the bootstrap image
-
-```shell
-docker build \
-    --target bootstrap-image \
-    --tag astral-dev-toolchain-bootstrap:dev \
-    .
-
-uv run astral-dev-toolchain \
-    --bootstrap-image astral-dev-toolchain-bootstrap:dev \
-    build --dry-run --select just
-```
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
