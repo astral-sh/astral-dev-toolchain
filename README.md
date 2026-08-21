@@ -36,14 +36,12 @@ See `--help` for additional options.
 
 ### Developing the bootstrap image
 
-The bootstrap image contains the system packages, Python, Rust targets, xwin
-cache, and macOS SDK. Build it explicitly and point the host CLI at it:
-
 ```shell
 docker build \
     --target bootstrap-image \
     --tag astral-dev-toolchain-bootstrap:dev \
     .
+
 uv run astral-dev-toolchain \
     --bootstrap-image astral-dev-toolchain-bootstrap:dev \
     build --dry-run --select just
