@@ -1,7 +1,5 @@
 """Build Rust tools with maturin."""
 
-from packaging.version import Version
-
 import json
 import logging
 import shlex
@@ -10,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import tomli_w
+from packaging.version import Version
 
 from ._plan import Plan
 from ._tool import RustToolSpec, Tool
