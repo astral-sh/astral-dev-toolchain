@@ -94,3 +94,5 @@ If you set `tool.backend = "go"`, the following backend options become available
   By default this is `.`, but repos with a `cmd/...` or similar layout
   may need a custom path.
 
+In addition, `version` is required when using the Go backend, since Go packages
+do not convey their own version.
