@@ -1,3 +1,4 @@
+import json
 import logging
 import shlex
 import subprocess
@@ -57,13 +58,44 @@ class Builder:
             )
             # TODO: Confirm the checkout matches `self.tool.source.commit`.
 
-            pyproject = dict(**_PYPROJECT_SKELETON)
-            pyproject["project"] = {"name": self.tool.python_package_name}
-
             if build := self.tool.build:
                 manifest_path = src_dir / build.manifest
             else:
                 manifest_path = src_dir / "Cargo.toml"
+
+            pyproject = dict(**_PYPROJECT_SKELETON)
+            project = {"name": self.tool.python_package_name}
+
+            if not self.tool.tool.version:
+                result = subprocess.run(
+                    [
+                        "cargo",
+                        "metadata",
+                        "--format-version",
+                        "1",
+                        "--no-deps",
+                        "--manifest-path",
+                        str(manifest_path),
+                    ],
+                    check=True,
+                    cwd=src_dir,
+                    stdout=subprocess.PIPE,
+                    text=True,
+                )
+                metadata = json.loads(result.stdout)
+                for package in metadata["packages"]:
+                    if (
+                        Path(package["manifest_path"]).resolve()
+                        == manifest_path.resolve()
+                    ):
+                        project["version"] = package["version"]
+                        break
+                else:
+                    raise ValueError(f"no package found for manifest: {manifest_path}")
+            else:
+                project["version"] = self.tool.tool.version
+
+            pyproject["project"] = project
 
             pyproject["tool"]["maturin"]["manifest-path"] = str(manifest_path)
             (builder_dir / "pyproject.toml").write_text(tomli_w.dumps(pyproject))
