@@ -1,0 +1,79 @@
+name: Toolchain build
+
+on:
+  pull_request:
+    paths:
+      - "toolchain/*/build.toml"
+  push:
+    branches:
+      - main
+    paths:
+      - "toolchain/*/build.toml"
+  workflow_dispatch:
+    inputs:
+      tool:
+        description: "Tool to build (tool.name from build.toml, e.g. cargo-hack)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  select:
+    name: Select tools
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tools: ${{ steps.select.outputs.tools }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Select tools
+        id: select
+        run: uv run scripts/ci-select-tools.py
+
+  build:
+    name: Build ${{ matrix.tool }}
+    needs: select
+    if: needs.select.outputs.tools != '[]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        tool: ${{ fromJSON(needs.select.outputs.tools) }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Build tool
+        env:
+          TOOL: ${{ matrix.tool }}
+        run: uv run --locked astral-dev-toolchain build --select "$TOOL"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: toolchain-${{ matrix.tool }}
+          path: toolchain-dist/*.whl
+          if-no-files-found: error
+
+      - name: Stop remaining build containers
+        if: always()
+        run: |
+          docker ps --quiet --filter label=org.astral-sh.astral-dev-toolchain.invocation \
+            | xargs --no-run-if-empty docker stop --timeout 10
+          test -z "$(docker ps --quiet --filter label=org.astral-sh.astral-dev-toolchain.invocation)"
