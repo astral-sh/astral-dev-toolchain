@@ -50,6 +50,8 @@ class Bootstrapper:
                 "toolchain",
                 "install",
                 "--no-self-update",
+                "--profile",
+                "minimal",
                 config.rust.toolchain,
             ]
         )

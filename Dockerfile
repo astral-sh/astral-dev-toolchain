@@ -16,11 +16,11 @@ ARG UBUNTU_SNAPSHOT
 RUN --mount=type=cache,id=astral-ubuntu-apt-lists-${TARGETARCH}-v4,target=/var/lib/apt/lists,sharing=locked \
     --mount=type=cache,id=astral-ubuntu-apt-archives-${TARGETARCH}-v1,target=/var/cache/apt,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean \
-    && DEBIAN_FRONTEND=noninteractive apt install -y --update ca-certificates \
+    && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends --update ca-certificates \
     && sed -i "s|^URIs: .*|URIs: https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/|" \
         /etc/apt/sources.list.d/ubuntu.sources \
     && apt update \
-    && DEBIAN_FRONTEND=noninteractive apt install -y \
+    && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
         curl \
         git
 
@@ -50,7 +50,8 @@ RUN --mount=type=tmpfs,target=/tmp/scratch \
     && git sparse-checkout set MacOSX11.3.sdk \
     && git checkout -q ${MACOSX_SDK_SHA} \
     && mkdir -p /app \
-    && mv MacOSX11.3.sdk /app/macos-sdk
+    && mv MacOSX11.3.sdk /app/macos-sdk \
+    && rm -rf /app/macos-sdk/usr/share/man
 
 FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
 
@@ -92,7 +93,9 @@ FROM bootstrap-deps AS provisioned
 
 ARG TARGETARCH
 
-RUN --mount=type=cache,id=astral-bootstrap-${TARGETARCH}-v1,target=/var/cache/astral-bootstrap,sharing=locked \
+# Start a new cache: existing rustup profiles and xwin caches retain optional
+# components even when the configuration stops requesting them.
+RUN --mount=type=cache,id=astral-bootstrap-${TARGETARCH}-v2,target=/var/cache/astral-bootstrap,sharing=locked \
     mkdir -p \
         /var/cache/astral-bootstrap/rust \
         /var/cache/astral-bootstrap/xwin-cache \
@@ -120,7 +123,7 @@ ENV GOTOOLCHAIN=local
 RUN --mount=type=cache,id=astral-ubuntu-runtime-apt-lists-${TARGETARCH}-v2,target=/var/lib/apt/lists,sharing=locked \
     --mount=type=cache,id=astral-ubuntu-apt-archives-${TARGETARCH}-v1,target=/var/cache/apt,sharing=locked \
     apt update \
-    && DEBIAN_FRONTEND=noninteractive apt install -y \
+    && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
         build-essential \
         llvm \
         clang \

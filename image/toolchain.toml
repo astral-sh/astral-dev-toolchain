@@ -16,5 +16,6 @@ architectures = ["x86_64", "aarch64"]
 sdk-version = "10.0.22621"
 crt-version = "14.44.17.14"
 http-retries = 10
-include-debug-libs = true
-include-debug-symbols = true
+# The toolchain builds release binaries, not debug CRT variants.
+include-debug-libs = false
+include-debug-symbols = false
