@@ -1,0 +1,10 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "hyperfine"
+
+[source]
+repo = "https://github.com/sharkdp/hyperfine"
+tag = "v1.20.0"
+commit = "975fe108c4ee7bd2600d10758207b44ca3dae738"
