@@ -25,6 +25,7 @@ class Builder:
             # |- builder/
             # | |
             # | |- pyproject.toml (generated for Rust builds)
+            # | |- README.md (generated for Rust builds)
             # | |- <tool>[.exe] (compiled binary for Go builds)
             # |
             # |- src/ (git clone contents)
@@ -60,4 +61,17 @@ class Builder:
             check=True,
             cwd=src_dir,
         )
-        # TODO: Confirm the checkout matches `self.tool.source.commit`.
+        result = subprocess.run(
+            [self.plan.git_bin, "rev-parse", "HEAD"],
+            check=True,
+            cwd=src_dir,
+            stdout=subprocess.PIPE,
+            text=True,
+        )
+        actual_commit = result.stdout.strip()
+        expected_commit = self.tool.source.commit
+        if actual_commit != expected_commit:
+            raise ValueError(
+                f"source commit mismatch for {self.tool.tool.name}: "
+                f"expected {expected_commit}, got {actual_commit}"
+            )

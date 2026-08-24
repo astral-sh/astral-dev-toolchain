@@ -71,13 +71,16 @@ Each `build.toml` tells astral-dev-toolchain how to build a tool in the toolchai
 At the moment, Go and Rust builds are supported. Other backends may be added in
 the future.
 
+The configured `source.tag` must resolve to the exact commit in `source.commit`.
+Builds validate this after cloning the source.
+
 See the definitions under [toolchain](./toolchain/) for concrete examples.
 
 ### Rust backend
 
 If you set `tool.backend = "rust"`, the following backend options become available:
 
-- `tool.mainfest` overrides the repo-relative path to the `Cargo.toml` manifest
+- `tool.manifest` overrides the repo-relative path to the `Cargo.toml` manifest
   that maturin uses. By default, this is just `Cargo.toml`, but workspace-style
   repos may need a custom path.
 - `tool.no-default-features` passes `--no-default-features` to the build.

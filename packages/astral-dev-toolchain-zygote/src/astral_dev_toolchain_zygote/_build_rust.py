@@ -11,10 +11,17 @@ from pathlib import Path
 import tomli_w
 from packaging.version import Version
 
+from ._metadata import readme_notice
 from ._plan import Plan
 from ._tool import RustToolSpec, Tool
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class _CargoPackage:
+    version: str
+    readme: Path
 
 
 @dataclass
@@ -58,25 +65,53 @@ class RustBuilder:
 
     def _prepare(self, src_dir: Path, build_dir: Path) -> None:
         manifest = src_dir / self.tool.tool.manifest
+        package = self._manifest_metadata(src_dir, manifest)
 
-        raw_version = self.tool.tool.version or self._manifest_version(
-            src_dir, manifest
-        )
+        raw_version = self.tool.tool.version or package.version
         version = Version(raw_version)
         if self.tool.tool.rebuild:
             version = version.__replace__(post=self.tool.tool.rebuild)
 
+        readme = self._prepare_readme(package.readme, build_dir)
         pyproject = {
             "build-system": {
                 "requires": ["maturin>=1,<2"],
                 "build-backend": "maturin",
             },
-            "project": {"name": self.package_name, "version": str(version)},
+            "project": {
+                "name": self.package_name,
+                "version": str(version),
+                "maintainers": [
+                    {"name": "Astral", "email": "hey@astral.sh"},
+                ],
+                "readme": readme,
+                "dynamic": [
+                    "description",
+                    "keywords",
+                    "license",
+                    "urls",
+                ],
+            },
             "tool": {"maturin": {"bindings": "bin", "manifest-path": str(manifest)}},
         }
-        (build_dir / "pyproject.toml").write_text(tomli_w.dumps(pyproject))
+        (build_dir / "pyproject.toml").write_text(
+            tomli_w.dumps(pyproject), encoding="utf-8"
+        )
 
-    def _manifest_version(self, src_dir: Path, manifest: Path) -> str:
+    def _prepare_readme(self, readme: Path, build_dir: Path) -> str:
+        if readme.suffix.lower() != ".md":
+            raise ValueError(
+                f"unsupported README format for {self.tool.tool.name}: {readme}"
+            )
+
+        notice = readme_notice(self.tool) + "\n---\n\n"
+        generated = build_dir / "README.md"
+        generated.write_text(
+            notice + readme.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+        return generated.name
+
+    def _manifest_metadata(self, src_dir: Path, manifest: Path) -> _CargoPackage:
         result = subprocess.run(
             [
                 self.plan.cargo_bin,
@@ -97,5 +132,18 @@ class RustBuilder:
         manifest = manifest.resolve()
         for package in metadata["packages"]:
             if Path(package["manifest_path"]).resolve() == manifest:
-                return package["version"]
+                readme = package.get("readme")
+                if not isinstance(readme, str):
+                    raise ValueError(f"package does not declare a README: {manifest}")
+                readme_path = Path(readme)
+                if not readme_path.is_absolute():
+                    readme_path = manifest.parent / readme_path
+                readme_path = readme_path.resolve()
+                if not readme_path.is_relative_to(src_dir.resolve()):
+                    raise ValueError(
+                        f"package README is outside the source checkout: {readme_path}"
+                    )
+                if not readme_path.is_file():
+                    raise ValueError(f"package README does not exist: {readme_path}")
+                return _CargoPackage(version=package["version"], readme=readme_path)
         raise ValueError(f"no package found for manifest: {manifest}")
