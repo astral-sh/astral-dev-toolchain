@@ -8,6 +8,7 @@ from pathlib import Path
 from go_to_wheel import build_wheel, compile_go_binary
 from packaging.version import Version
 
+from ._metadata import readme_notice
 from ._plan import Plan
 from ._tool import GoToolSpec, Tool
 
@@ -109,6 +110,7 @@ class GoBuilder:
             platform_tag=platform.wheel_tag,
             entry_point=self.tool.tool.name,
             is_windows=platform.goos == "windows",
+            readme_content=readme_notice(self.tool),
         )
         logger.info("built %s", wheel)
 
