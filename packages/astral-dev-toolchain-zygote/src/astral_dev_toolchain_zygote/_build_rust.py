@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import shlex
 import subprocess
 from dataclasses import dataclass
@@ -36,6 +37,9 @@ class RustBuilder:
             command.append("--no-default-features")
         command.extend(["--out", self.plan.output_dir])
 
+        if self.plan.dry_run and self.tool.tool.env:
+            logger.info("[dry-run] environment overrides: %r", self.tool.tool.env)
+
         for target in self.plan.targets:
             target_command = [*command, "--target", target]
             if self.plan.dry_run:
@@ -45,7 +49,12 @@ class RustBuilder:
                     build_dir,
                 )
             else:
-                subprocess.run(target_command, check=True, cwd=build_dir)
+                subprocess.run(
+                    target_command,
+                    check=True,
+                    cwd=build_dir,
+                    env=os.environ | self.tool.tool.env,
+                )
 
     def _prepare(self, src_dir: Path, build_dir: Path) -> None:
         manifest = src_dir / self.tool.tool.manifest
@@ -80,6 +89,7 @@ class RustBuilder:
             ],
             check=True,
             cwd=src_dir,
+            env=os.environ | self.tool.tool.env,
             stdout=subprocess.PIPE,
             text=True,
         )

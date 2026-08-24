@@ -82,6 +82,22 @@ If you set `tool.backend = "rust"`, the following backend options become availab
   repos may need a custom path.
 - `tool.no-default-features` passes `--no-default-features` to the build.
   By default this is `false` (i.e. default features are enabled).
+- `tool.env` is a table of string environment overrides for the tool's Cargo
+  metadata and Maturin subprocesses. These are merged into the inherited
+  environment without affecting other tools or the parent process. Names and
+  values are passed literally, without shell expansion.
+
+For example, cargo-edit needs a compiler driver override for Windows ARM64:
+
+```toml
+[tool.env]
+"CFLAGS_aarch64-pc-windows-msvc" = "--driver-mode=cl"
+```
+
+The target-qualified variable limits the compiler flag to Windows ARM64. Its
+hyphenated spelling is intentional: cargo-xwin sets the underscored variant,
+and the `cc` crate combines both, preserving the existing SDK include flags.
+This keeps cargo-xwin's default backend and the SDK/CRT already in the image.
 
 ### Go backend
 
