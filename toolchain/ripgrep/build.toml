@@ -5,10 +5,12 @@ backend = "rust"
 name = "ripgrep"
 
 [tool.env]
-# Ripgrep enables release debuginfo, but the bootstrap image omits CRT PDBs.
-# Disable it to avoid LNK4099 errors under ripgrep's MSVC /WX linker flag.
+# Rust's MSVC linker emits /DEBUG even with debuginfo disabled. Ignore missing
+# CRT PDBs (LNK4099), which the bootstrap omits, while keeping /WX for other warnings.
+# Preserve +crt-static because this override replaces upstream target rustflags.
+# ARM64 static CRT support is tracked upstream:
 # https://github.com/BurntSushi/ripgrep/pull/3519
-CARGO_PROFILE_RELEASE_DEBUG = "0"
+CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS = "-C target-feature=+crt-static -C link-arg=/IGNORE:4099"
 
 [source]
 repo = "https://github.com/BurntSushi/ripgrep"
