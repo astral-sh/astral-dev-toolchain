@@ -19,7 +19,13 @@ def main() -> None:
         for path in Path("toolchain").glob("*/build.toml")
     }
 
-    if event_name == "workflow_dispatch":
+    override = os.environ.get("SELECT", "")
+    if override:
+        selected = [tool.strip() for tool in override.split(",")]
+        unknown = sorted(set(selected) - set(definitions.values()))
+        if unknown:
+            raise SystemExit(f"Unknown tools: {', '.join(map(repr, unknown))}")
+    elif event_name == "workflow_dispatch":
         tool = event["inputs"]["tool"]
         if tool not in definitions.values():
             raise SystemExit(f"Unknown tool: {tool!r}")

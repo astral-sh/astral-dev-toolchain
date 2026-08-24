@@ -10,6 +10,13 @@ permissions:
   contents: read
 
 jobs:
+  toolchain-build:
+    name: Toolchain build
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/toolchain-build.yml
+
   lint:
     name: Lint
     runs-on: ubuntu-24.04

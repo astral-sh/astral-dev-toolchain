@@ -1,14 +1,12 @@
 name: Toolchain build
 
 on:
-  pull_request:
-    paths:
-      - "toolchain/*/build.toml"
-  push:
-    branches:
-      - main
-    paths:
-      - "toolchain/*/build.toml"
+  workflow_call:
+    inputs:
+      select:
+        description: "Tools to build (comma-separated tool.name values from build.toml)"
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       tool:
@@ -38,6 +36,8 @@ jobs:
 
       - name: Select tools
         id: select
+        env:
+          SELECT: ${{ inputs.select }}
         run: uv run scripts/ci-select-tools.py
 
   build:
