@@ -5,6 +5,6 @@ backend = "rust"
 name = "ripgrep"
 
 [source]
-repo = "https://github.com/BurntSushi/ripgrep/releases/tag/15.2.0"
+repo = "https://github.com/BurntSushi/ripgrep"
 tag = "15.2.0"
 commit = "e89fff89ac9af12e8d4ce9d5fd07beb408ca730f"
