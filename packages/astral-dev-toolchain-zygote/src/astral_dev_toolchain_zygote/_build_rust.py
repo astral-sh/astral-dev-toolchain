@@ -74,8 +74,10 @@ class RustBuilder:
             "project": {
                 "name": self.package_name,
                 "version": str(version),
+                "maintainers": [
+                    {"name": "Astral", "email": "hey@astral.sh"},
+                ],
                 "dynamic": [
-                    "authors",
                     "description",
                     "keywords",
                     "license",
