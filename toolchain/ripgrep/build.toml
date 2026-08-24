@@ -7,6 +7,7 @@ name = "ripgrep"
 [tool.env]
 # Ripgrep enables release debuginfo, but the bootstrap image omits CRT PDBs.
 # Disable it to avoid LNK4099 errors under ripgrep's MSVC /WX linker flag.
+# https://github.com/BurntSushi/ripgrep/pull/3519
 CARGO_PROFILE_RELEASE_DEBUG = "0"
 
 [source]
