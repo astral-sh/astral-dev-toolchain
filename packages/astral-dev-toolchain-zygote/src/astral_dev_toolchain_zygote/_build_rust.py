@@ -71,7 +71,18 @@ class RustBuilder:
                 "requires": ["maturin>=1,<2"],
                 "build-backend": "maturin",
             },
-            "project": {"name": self.package_name, "version": str(version)},
+            "project": {
+                "name": self.package_name,
+                "version": str(version),
+                "dynamic": [
+                    "authors",
+                    "description",
+                    "keywords",
+                    "license",
+                    "readme",
+                    "urls",
+                ],
+            },
             "tool": {"maturin": {"bindings": "bin", "manifest-path": str(manifest)}},
         }
         (build_dir / "pyproject.toml").write_text(tomli_w.dumps(pyproject))
