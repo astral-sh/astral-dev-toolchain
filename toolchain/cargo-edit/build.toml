@@ -4,6 +4,12 @@ version = 1
 backend = "rust"
 name = "cargo-edit"
 
+[tool.env]
+# ring selects clang on Windows ARM64, but cargo-xwin supplies clang-cl flags.
+# Keep cl argument syntax and the existing SDK/CRT. The hyphenated target is
+# intentional: cargo-xwin overwrites the underscored CFLAGS variant.
+"CFLAGS_aarch64-pc-windows-msvc" = "--driver-mode=cl"
+
 [source]
 repo = "https://github.com/killercup/cargo-edit"
 tag = "v0.13.13"

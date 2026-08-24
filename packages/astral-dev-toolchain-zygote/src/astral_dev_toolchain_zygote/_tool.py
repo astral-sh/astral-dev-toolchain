@@ -75,6 +75,9 @@ class RustToolSpec(_ToolSpec):
     Whether to pass `--no-default-features` to the Rust build.
     """
 
+    env: dict[StrictStr, StrictStr] = Field(default_factory=dict)
+    """Environment overrides for this tool's Cargo and Maturin subprocesses."""
+
 
 class GoToolSpec(_ToolSpec):
     """Metadata and build settings for a CGO-disabled Go tool."""
