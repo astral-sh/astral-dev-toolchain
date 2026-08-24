@@ -4,6 +4,11 @@ version = 1
 backend = "rust"
 name = "ripgrep"
 
+[tool.env]
+# Ripgrep enables release debuginfo, but the bootstrap image omits CRT PDBs.
+# Disable it to avoid LNK4099 errors under ripgrep's MSVC /WX linker flag.
+CARGO_PROFILE_RELEASE_DEBUG = "0"
+
 [source]
 repo = "https://github.com/BurntSushi/ripgrep"
 tag = "15.2.0"
