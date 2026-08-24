@@ -1,0 +1,10 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "cargo-edit"
+
+[source]
+repo = "https://github.com/killercup/cargo-edit"
+tag = "v0.13.13"
+commit = "138d4e2948ddcbf249c31c584b02e1b161a86221"
