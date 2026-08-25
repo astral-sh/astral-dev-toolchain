@@ -98,5 +98,5 @@ jobs:
 
       - name: Test wheels
         env:
-          ASTRAL_DEV_TOOLCHAIN_TEST_SELECT: ${{ inputs.tool }}
+          ASTRAL_DEV_TOOLCHAIN_TEST_SELECT: ${{ format('[{0}]', toJSON(inputs.tool)) }}
         run: uv run --locked astral-dev-toolchain test --dist-dir toolchain-dist
