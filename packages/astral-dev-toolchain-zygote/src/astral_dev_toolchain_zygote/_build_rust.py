@@ -66,6 +66,14 @@ class RustBuilder:
                 )
 
     def _prepare(self, src_dir: Path, build_dir: Path) -> None:
+        if not self.tool.tool.cargo_config:
+            cargo_dir = src_dir / ".cargo"
+            for name in ("config.toml", "config"):
+                config = cargo_dir / name
+                if config.is_file() or config.is_symlink():
+                    logger.info("ignoring upstream Cargo configuration: %s", config)
+                    config.unlink()
+
         manifest = src_dir / self.tool.tool.manifest
         package = self._manifest_metadata(src_dir, manifest)
 

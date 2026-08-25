@@ -85,6 +85,9 @@ class RustToolSpec(_ToolSpec):
     features: tuple[_NonEmptyString, ...] = Field(default_factory=tuple)
     """Cargo features to enable for the Rust build."""
 
+    cargo_config: StrictBool = True
+    """Whether to use Cargo configuration from the source checkout."""
+
     env: dict[StrictStr, StrictStr] = Field(default_factory=dict)
     """Environment overrides for this tool's Cargo and Maturin subprocesses."""
 
