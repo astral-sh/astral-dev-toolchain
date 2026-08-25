@@ -1,6 +1,7 @@
 import logging
 import os
 import shlex
+import shutil
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -69,6 +70,14 @@ class Tester:
 
                 for test in tool.tests:
                     command = list(test.run)
+                    executable = shutil.which(command[0], path=env["PATH"])
+                    if executable is None:
+                        failures.append(
+                            f"{tool.tool.name} ({test.name}): executable not found: "
+                            f"{test.run[0]}"
+                        )
+                        continue
+                    command[0] = executable
                     logger.info(
                         "testing %s (%s): %s",
                         tool.tool.name,
