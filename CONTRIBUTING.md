@@ -62,25 +62,12 @@ uv run astral-dev-toolchain build --select cargo-hack
 
 Build artifacts are written to `toolchain-dist/` by default.
 
-Build only one target, using a triple supported by the selected image:
-
-```shell
-uv run astral-dev-toolchain build --select cargo-nextest --target x86_64-unknown-linux-gnu
-```
-
-Repeat `--target` to build a group of targets:
+Build only a subset of targets with one or more `--target` flags:
 
 ```shell
 uv run astral-dev-toolchain build --select cargo-nextest \
     --target aarch64-apple-darwin --target x86_64-apple-darwin
 ```
-
-Without `--target`, all image targets are built. Duplicates are ignored and
-targets are built in image configuration order. Selection also applies to
-`--dry-run`. Unsupported targets are rejected before tool sources are fetched.
-
-CI sharding is controlled per tool by `ci.shard` in `build.toml`
-(see [CI settings](#ci-settings)).
 
 See `--help` for additional options.
 
@@ -132,24 +119,6 @@ The configured `source.tag` must resolve to the exact commit in `source.commit`.
 Builds validate this after cloning the source.
 
 See the definitions under [toolchain](./toolchain/) for concrete examples.
-
-### CI settings
-
-To build each target in a separate CI job, add this to the tool's `build.toml`:
-
-```toml
-[ci]
-shard = true
-```
-
-`shard` defaults to `false`, which builds all targets in one job. The setting
-affects both build and test workflows; it does not change local CLI behavior.
-Only `cargo-nextest` currently opts in.
-
-CI derives both build shards and native smoke-test targets from
-`image/toolchain.toml`. Native runner assignments live in
-`scripts/ci-select-tools.py`; adding a target without a runner assignment fails
-selection instead of silently skipping its smoke tests.
 
 ### Rust backend
 
