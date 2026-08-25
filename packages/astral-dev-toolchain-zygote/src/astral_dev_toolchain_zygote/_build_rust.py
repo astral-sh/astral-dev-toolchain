@@ -42,6 +42,8 @@ class RustBuilder:
         command = [self.plan.maturin_bin, "build", "--release", "--zig"]
         if self.tool.tool.no_default_features:
             command.append("--no-default-features")
+        if self.tool.tool.features:
+            command.extend(["--features", ",".join(self.tool.tool.features)])
         command.extend(["--out", self.plan.output_dir])
 
         if self.plan.dry_run and self.tool.tool.env:

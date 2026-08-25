@@ -82,6 +82,9 @@ class RustToolSpec(_ToolSpec):
     no_default_features: StrictBool = False
     """Whether to pass `--no-default-features` to the Rust build."""
 
+    features: tuple[_NonEmptyString, ...] = Field(default_factory=tuple)
+    """Cargo features to enable for the Rust build."""
+
     env: dict[StrictStr, StrictStr] = Field(default_factory=dict)
     """Environment overrides for this tool's Cargo and Maturin subprocesses."""
 

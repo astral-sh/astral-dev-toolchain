@@ -3,10 +3,8 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-shear"
-
-[tool.env]
-# Fat LTO produces Windows binaries that crash at startup when cross-linked.
-CARGO_PROFILE_RELEASE_LTO = "false"
+# Match cargo-shear's upstream release builds, which use mimalloc.
+features = ["allocator"]
 
 [source]
 repo = "https://github.com/Boshen/cargo-shear"
