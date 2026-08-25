@@ -3,8 +3,10 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-shear"
-# Match cargo-shear's upstream release builds, which use mimalloc.
-features = ["allocator"]
+# Match cargo-shear's upstream release builds, which use mimalloc. Disable
+# mimalloc's architecture-specific C flags because cargo-zigbuild cannot
+# translate them reliably while cross-compiling the macOS wheels.
+features = ["allocator", "mimalloc-safe/no_opt_arch"]
 
 [source]
 repo = "https://github.com/Boshen/cargo-shear"
