@@ -7,8 +7,10 @@ name = "cargo-shear"
 # mimalloc's architecture-specific C flags because cargo-zigbuild cannot
 # translate them reliably while cross-compiling the macOS wheels.
 features = ["allocator", "mimalloc-safe/no_opt_arch"]
-# cargo-shear's hybrid-CRT settings conflict with cargo-xwin's static-CRT
-# support and use /FORCE, which otherwise emits broken Windows executables.
+# cargo-shear's pinned Cargo configuration contains only Windows CRT settings.
+# Its hybrid-CRT link arguments follow cargo-xwin's static-CRT arguments and use
+# /FORCE, producing executables that link successfully but crash at startup.
+# Ignore that configuration and supply the required static-CRT setting below.
 cargo-config = false
 
 [tool.env]

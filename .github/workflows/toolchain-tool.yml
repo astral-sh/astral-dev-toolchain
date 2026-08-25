@@ -52,13 +52,6 @@ jobs:
           path: toolchain-dist/*.whl
           if-no-files-found: error
 
-      - name: Stop remaining build containers
-        if: always()
-        run: |
-          docker ps --quiet --filter label=org.astral-sh.astral-dev-toolchain.invocation \
-            | xargs --no-run-if-empty docker stop --timeout 10
-          test -z "$(docker ps --quiet --filter label=org.astral-sh.astral-dev-toolchain.invocation)"
-
   smoke:
     name: Test ${{ inputs.tool }} on ${{ matrix.target }}
     needs: build

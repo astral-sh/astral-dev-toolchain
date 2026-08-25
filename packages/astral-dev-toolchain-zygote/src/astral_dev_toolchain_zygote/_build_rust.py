@@ -67,6 +67,9 @@ class RustBuilder:
 
     def _prepare(self, src_dir: Path, build_dir: Path) -> None:
         if not self.tool.tool.cargo_config:
+            # Cargo has no option to disable configuration discovered in a source
+            # tree, and higher-priority configuration cannot clear array values.
+            # The checkout is temporary, so remove both supported filenames.
             cargo_dir = src_dir / ".cargo"
             for name in ("config.toml", "config"):
                 config = cargo_dir / name

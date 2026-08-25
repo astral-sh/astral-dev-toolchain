@@ -86,7 +86,12 @@ class RustToolSpec(_ToolSpec):
     """Cargo features to enable for the Rust build."""
 
     cargo_config: StrictBool = True
-    """Whether to use Cargo configuration from the source checkout."""
+    """
+    Whether to preserve Cargo configuration from the pinned source checkout.
+
+    This should only be disabled when that configuration conflicts with
+    cross-compilation and the required settings are supplied explicitly.
+    """
 
     env: dict[StrictStr, StrictStr] = Field(default_factory=dict)
     """Environment overrides for this tool's Cargo and Maturin subprocesses."""
