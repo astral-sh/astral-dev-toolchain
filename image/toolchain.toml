@@ -2,14 +2,15 @@ version = 1
 
 [rust]
 toolchain = "1.97.1"
-targets = [
-    "aarch64-apple-darwin",
-    "x86_64-apple-darwin",
-    "aarch64-unknown-linux-gnu",
-    "x86_64-unknown-linux-gnu",
-    "aarch64-pc-windows-msvc",
-    "x86_64-pc-windows-msvc",
-]
+
+# Target triples and their native CI runners.
+[rust.targets]
+aarch64-apple-darwin = "macos-15"
+x86_64-apple-darwin = "macos-15-intel"
+aarch64-unknown-linux-gnu = "ubuntu-24.04-arm"
+x86_64-unknown-linux-gnu = "ubuntu-24.04"
+aarch64-pc-windows-msvc = "windows-11-arm"
+x86_64-pc-windows-msvc = "windows-2025"
 
 [xwin]
 architectures = ["x86_64", "aarch64"]

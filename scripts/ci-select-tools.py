@@ -9,16 +9,6 @@ from typing import TypedDict
 
 from astral_dev_toolchain_core import Tool
 
-# Runner assignments are independent of which targets the image enables.
-_RUNNERS = {
-    "aarch64-apple-darwin": "macos-15",
-    "x86_64-apple-darwin": "macos-15-intel",
-    "aarch64-unknown-linux-gnu": "ubuntu-24.04-arm",
-    "x86_64-unknown-linux-gnu": "ubuntu-24.04",
-    "aarch64-pc-windows-msvc": "windows-11-arm",
-    "x86_64-pc-windows-msvc": "windows-2025",
-}
-
 
 class _Target(TypedDict):
     target: str
@@ -29,12 +19,10 @@ def _target_matrix() -> list[_Target]:
     with Path("image/toolchain.toml").open("rb") as stream:
         config = tomllib.load(stream)
 
-    targets: list[_Target] = []
-    for target in config["rust"]["targets"]:
-        runner = _RUNNERS.get(target)
-        if runner is None:
-            raise SystemExit(f"No native smoke-test runner configured for {target!r}")
-        targets.append({"target": target, "runner": runner})
+    targets: list[_Target] = [
+        {"target": target, "runner": runner}
+        for target, runner in config["rust"]["targets"].items()
+    ]
     if not targets:
         raise SystemExit("No build targets configured in image/toolchain.toml")
     return targets
