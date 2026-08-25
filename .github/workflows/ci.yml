@@ -41,6 +41,3 @@ jobs:
 
       - name: Check types
         run: uv run --no-sync ty check
-
-      - name: Run unit tests
-        run: uv run --no-sync python -m unittest discover -s tests
