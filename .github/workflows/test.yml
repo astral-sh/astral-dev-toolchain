@@ -18,54 +18,40 @@ permissions:
   contents: read
 
 jobs:
-  build:
-    name: Build tools
-    permissions:
-      contents: read
-      packages: read
-    uses: ./.github/workflows/toolchain-build.yml
-    with:
-      select: ${{ inputs.select || inputs.tool }}
-
-  test:
-    name: Test ${{ matrix.target }}
-    needs: build
-    if: needs.build.outputs.tools != '[]'
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            runner: ubuntu-24.04
-          - target: aarch64-unknown-linux-gnu
-            runner: ubuntu-24.04-arm
-          - target: x86_64-apple-darwin
-            runner: macos-15-intel
-          - target: aarch64-apple-darwin
-            runner: macos-15
-          - target: x86_64-pc-windows-msvc
-            runner: windows-2025
-          - target: aarch64-pc-windows-msvc
-            runner: windows-11-arm
+  select:
+    name: Select tools
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tools: ${{ steps.select.outputs.tools }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
-      - name: Download wheels
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: toolchain-*
-          path: toolchain-dist
-          merge-multiple: true
-
-      - name: Test wheels
+      - name: Select tools
+        id: select
         env:
-          ASTRAL_DEV_TOOLCHAIN_TEST_SELECT: ${{ needs.build.outputs.tools }}
-        run: uv run --locked astral-dev-toolchain test --dist-dir toolchain-dist
+          SELECT: ${{ inputs.select || inputs.tool }}
+        run: uv run --locked python scripts/ci-select-tools.py
+
+  test:
+    name: Test ${{ matrix.tool }}
+    needs: select
+    if: needs.select.outputs.tools != '[]'
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        tool: ${{ fromJSON(needs.select.outputs.tools) }}
+    uses: ./.github/workflows/toolchain-tool.yml
+    with:
+      tool: ${{ matrix.tool }}
+      smoke: true
