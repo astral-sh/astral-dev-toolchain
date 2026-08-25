@@ -6,7 +6,7 @@ from astral_dev_toolchain_core import Toolchain
 
 from ._build import Builder
 from ._config import ImageConfig
-from ._plan import Plan
+from ._plan import Plan, PlanError
 
 _LOG_FORMAT = "%(levelname)s %(message)s"
 
@@ -50,6 +50,13 @@ def run() -> None:
         help="List of toolchain tools to build, by tool.name",
     )
     build.add_argument(
+        "--target",
+        action="append",
+        default=[],
+        metavar="TRIPLE",
+        help="Build only this target (repeatable; defaults to all image targets)",
+    )
+    build.add_argument(
         "--output-dir",
         type=Path,
         default=Path("/dist"),
@@ -71,7 +78,10 @@ def _do_build(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None
         parser.error(f"toolchain directory does not exist: {args.toolchain_dir}")
 
     config = ImageConfig.load(args.config)
-    plan = Plan.load(args, config)
+    try:
+        plan = Plan.load(args, config)
+    except PlanError as error:
+        parser.error(str(error))
     toolchain = Toolchain.load(plan.toolchain_dir, plan.selected_tools)
     logger.info("building %d tool(s)", len(toolchain.tools))
 

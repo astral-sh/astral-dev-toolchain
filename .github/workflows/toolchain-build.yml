@@ -58,3 +58,4 @@ jobs:
     uses: ./.github/workflows/toolchain-tool.yml
     with:
       tool: ${{ matrix.tool }}
+      shard-targets: ${{ matrix.tool == 'cargo-nextest' }}

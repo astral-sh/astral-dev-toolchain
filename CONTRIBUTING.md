@@ -62,6 +62,26 @@ uv run astral-dev-toolchain build --select cargo-hack
 
 Build artifacts are written to `toolchain-dist/` by default.
 
+Build only one target, using a triple supported by the selected image:
+
+```shell
+uv run astral-dev-toolchain build --select cargo-nextest --target x86_64-unknown-linux-gnu
+```
+
+Repeat `--target` to build a group of targets:
+
+```shell
+uv run astral-dev-toolchain build --select cargo-nextest \
+    --target aarch64-apple-darwin --target x86_64-apple-darwin
+```
+
+Without `--target`, all image targets are built. Duplicates are ignored and
+targets are built in image configuration order. Selection also applies to
+`--dry-run`. Unsupported targets are rejected before tool sources are fetched.
+
+CI currently builds each `cargo-nextest` target in a separate job as a sharding
+trial. Other tools still build all targets in one job.
+
 See `--help` for additional options.
 
 ## Testing built tools

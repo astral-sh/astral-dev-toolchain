@@ -37,6 +37,19 @@ class Plan:
         if not args.output_dir.is_dir():
             raise PlanError(f"not a directory: {args.output_dir}")
 
+        selected_targets = set(args.target)
+        unknown_targets = selected_targets - set(config.targets)
+        if unknown_targets:
+            raise PlanError(
+                f"unknown build targets: {', '.join(sorted(unknown_targets))}; "
+                f"supported targets: {', '.join(config.targets)}"
+            )
+        targets = tuple(
+            target
+            for target in config.targets
+            if not selected_targets or target in selected_targets
+        )
+
         return cls(
             git_bin=_which("git"),
             cargo_bin=_which("cargo"),
@@ -45,6 +58,6 @@ class Plan:
             toolchain_dir=args.toolchain_dir,
             output_dir=args.output_dir,
             selected_tools=set(args.select),
-            targets=config.targets,
+            targets=targets,
             dry_run=args.dry_run,
         )

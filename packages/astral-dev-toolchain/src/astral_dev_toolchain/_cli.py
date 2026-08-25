@@ -86,6 +86,13 @@ def run() -> None:
         help="List of toolchain tools to build, by tool.name",
     )
     build.add_argument(
+        "--target",
+        action="append",
+        default=[],
+        metavar="TRIPLE",
+        help="Build only this target (repeatable; defaults to all image targets)",
+    )
+    build.add_argument(
         "--output-dir",
         type=Path,
         default=Path("toolchain-dist"),
@@ -161,6 +168,8 @@ def _do_build(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None
         command.append("--dry-run")
     if args.select:
         command.extend(["--select", *args.select])
+    for target in args.target:
+        command.extend(["--target", target])
 
     logger.info("running toolchain build in %s", image)
     logger.debug("running: %s", shlex.join(command))
