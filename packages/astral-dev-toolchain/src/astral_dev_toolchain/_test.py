@@ -70,6 +70,8 @@ class Tester:
 
                 for test in tool.tests:
                     command = list(test.run)
+                    # Keep build.toml platform-neutral while resolving .exe names on
+                    # Windows through PATHEXT.
                     executable = shutil.which(command[0], path=env["PATH"])
                     if executable is None:
                         failures.append(
