@@ -9,11 +9,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import tomli_w
+from astral_dev_toolchain_core import RustToolSpec, Tool
 from packaging.version import Version
 
 from ._metadata import readme_notice
 from ._plan import Plan
-from ._tool import RustToolSpec, Tool
 
 logger = logging.getLogger(__name__)
 

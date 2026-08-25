@@ -10,3 +10,7 @@ manifest = "cargo-insta/Cargo.toml"
 repo = "https://github.com/mitsuhiko/insta"
 tag = "1.48.0"
 commit = "7f23d2e4684a789a85c50503004fb38a23c9ea58"
+
+[[test]]
+name = "help"
+run = ["cargo-insta", "--help"]

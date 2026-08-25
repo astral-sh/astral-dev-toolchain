@@ -1,0 +1,11 @@
+[project]
+name = "astral-dev-toolchain-core"
+version = "0.1.0"
+description = "Shared models for the Astral development toolchain"
+authors = [{ name = "William Woodruff", email = "william@yossarian.net" }]
+requires-python = ">=3.14"
+dependencies = ["pydantic>=2.13.4"]
+
+[build-system]
+requires = ["uv_build>=0.12.4,<0.13.0"]
+build-backend = "uv_build"

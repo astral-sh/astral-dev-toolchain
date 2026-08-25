@@ -64,6 +64,43 @@ Build artifacts are written to `toolchain-dist/` by default.
 
 See `--help` for additional options.
 
+## Testing built tools
+
+Each tool definition can declare smoke tests that run against the wheel for the
+current platform:
+
+```toml
+[[test]]
+name = "help"
+run = ["some-tool", "--help"]
+```
+
+`run` is an argument array and is executed directly, without a shell. The
+expected exit code defaults to zero; set `exitcode` when a test intentionally
+returns another code:
+
+```toml
+[[test]]
+name = "expected failure"
+run = ["some-tool", "check"]
+exitcode = 2
+```
+
+Tests are optional. Tools without tests are reported as skipped and are not
+installed. To install wheels exclusively from `toolchain-dist/` and run all
+configured tests for the current platform:
+
+```shell
+uv run astral-dev-toolchain test
+```
+
+Use `--select` to test the same subset passed to `build`, or `--dist-dir` to
+read wheels from another directory:
+
+```shell
+uv run astral-dev-toolchain test --select cargo-hack just
+```
+
 ## Tool definitions
 
 Each `build.toml` tells astral-dev-toolchain how to build a tool in the toolchain.

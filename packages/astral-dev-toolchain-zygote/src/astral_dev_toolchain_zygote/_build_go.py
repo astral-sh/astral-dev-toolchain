@@ -5,12 +5,12 @@ from dataclasses import dataclass
 from functools import cached_property
 from pathlib import Path
 
+from astral_dev_toolchain_core import GoToolSpec, Tool
 from go_to_wheel import build_wheel, compile_go_binary
 from packaging.version import Version
 
 from ._metadata import readme_notice
 from ._plan import Plan
-from ._tool import GoToolSpec, Tool
 
 logger = logging.getLogger(__name__)
 

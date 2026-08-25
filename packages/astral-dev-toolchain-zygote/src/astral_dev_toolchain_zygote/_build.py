@@ -5,10 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from astral_dev_toolchain_core import GoToolSpec, RustToolSpec, Tool
+
 from ._build_go import GoBuilder
 from ._build_rust import RustBuilder
 from ._plan import Plan
-from ._tool import GoToolSpec, RustToolSpec, Tool
 
 
 @dataclass

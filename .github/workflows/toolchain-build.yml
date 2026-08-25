@@ -7,6 +7,10 @@ on:
         description: "Tools to build (comma-separated tool.name values from build.toml)"
         required: false
         type: string
+    outputs:
+      tools:
+        description: "Selected tool.name values as a JSON array"
+        value: ${{ jobs.select.outputs.tools }}
   workflow_dispatch:
     inputs:
       tool:
@@ -38,7 +42,7 @@ jobs:
         id: select
         env:
           SELECT: ${{ inputs.select }}
-        run: uv run scripts/ci-select-tools.py
+        run: uv run --locked python scripts/ci-select-tools.py
 
   build:
     name: Build ${{ matrix.tool }}
