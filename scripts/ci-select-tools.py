@@ -5,6 +5,7 @@ import os
 import subprocess
 import tomllib
 from pathlib import Path
+from typing import TypedDict
 
 from astral_dev_toolchain_core import Tool
 
@@ -19,11 +20,16 @@ _RUNNERS = {
 }
 
 
-def _target_matrix() -> list[dict[str, str]]:
+class _Target(TypedDict):
+    target: str
+    runner: str
+
+
+def _target_matrix() -> list[_Target]:
     with Path("image/toolchain.toml").open("rb") as stream:
         config = tomllib.load(stream)
 
-    targets = []
+    targets: list[_Target] = []
     for target in config["rust"]["targets"]:
         runner = _RUNNERS.get(target)
         if runner is None:
