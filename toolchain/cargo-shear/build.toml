@@ -4,6 +4,10 @@ version = 1
 backend = "rust"
 name = "cargo-shear"
 
+[tool.env]
+# Fat LTO produces Windows binaries that crash at startup when cross-linked.
+CARGO_PROFILE_RELEASE_LTO = "false"
+
 [source]
 repo = "https://github.com/Boshen/cargo-shear"
 tag = "v1.13.4"
