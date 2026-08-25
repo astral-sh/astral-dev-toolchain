@@ -79,8 +79,8 @@ Without `--target`, all image targets are built. Duplicates are ignored and
 targets are built in image configuration order. Selection also applies to
 `--dry-run`. Unsupported targets are rejected before tool sources are fetched.
 
-CI currently builds each `cargo-nextest` target in a separate job as a sharding
-trial. Other tools still build all targets in one job.
+CI sharding is controlled per tool by `ci.shard` in `build.toml`
+(see [CI settings](#ci-settings)).
 
 See `--help` for additional options.
 
@@ -132,6 +132,19 @@ The configured `source.tag` must resolve to the exact commit in `source.commit`.
 Builds validate this after cloning the source.
 
 See the definitions under [toolchain](./toolchain/) for concrete examples.
+
+### CI settings
+
+To build each target in a separate CI job, add this to the tool's `build.toml`:
+
+```toml
+[ci]
+shard = true
+```
+
+`shard` defaults to `false`, which builds all targets in one job. The setting
+affects both build and test workflows; it does not change local CLI behavior.
+Only `cargo-nextest` currently opts in.
 
 ### Rust backend
 
