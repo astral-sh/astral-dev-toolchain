@@ -146,6 +146,11 @@ shard = true
 affects both build and test workflows; it does not change local CLI behavior.
 Only `cargo-nextest` currently opts in.
 
+CI derives both build shards and native smoke-test targets from
+`image/toolchain.toml`. Native runner assignments live in
+`scripts/ci-select-tools.py`; adding a target without a runner assignment fails
+selection instead of silently skipping its smoke tests.
+
 ### Rust backend
 
 If you set `tool.backend = "rust"`, the following backend options become available:
