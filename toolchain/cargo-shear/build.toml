@@ -8,6 +8,12 @@ name = "cargo-shear"
 # translate them reliably while cross-compiling the macOS wheels.
 features = ["allocator", "mimalloc-safe/no_opt_arch"]
 
+[tool.env]
+# cargo-shear enables fat LTO in its release profile. When cargo-xwin links
+# that profile with lld, unresolved CRT symbols are only reported as warnings
+# and the resulting Windows executables crash at startup.
+CARGO_PROFILE_RELEASE_LTO = "false"
+
 [source]
 repo = "https://github.com/Boshen/cargo-shear"
 tag = "v1.13.4"
