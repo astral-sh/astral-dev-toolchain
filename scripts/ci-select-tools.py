@@ -1,21 +1,18 @@
-# /// script
-# requires-python = ">=3.14"
-# dependencies = []
-# ///
 """Select tool builds from the GitHub Actions event and emit a JSON matrix."""
 
 import json
 import os
 import subprocess
-import tomllib
 from pathlib import Path
+
+from astral_dev_toolchain_core import Tool
 
 
 def main() -> None:
     event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
     event_name = os.environ["GITHUB_EVENT_NAME"]
     definitions = {
-        path: tomllib.loads(path.read_text())["tool"]["name"]
+        path: Tool.load(path).tool.name
         for path in Path("toolchain").glob("*/build.toml")
     }
 

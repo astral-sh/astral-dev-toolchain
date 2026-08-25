@@ -1,0 +1,95 @@
+name: Toolchain tool
+
+on:
+  workflow_call:
+    inputs:
+      tool:
+        description: "Tool to build (tool.name from build.toml)"
+        required: true
+        type: string
+      smoke:
+        description: "Run the tool's smoke tests on every native target"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build ${{ inputs.tool }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build tool
+        env:
+          TOOL: ${{ inputs.tool }}
+        run: uv run --locked astral-dev-toolchain build --select "$TOOL"
+
+      - name: Upload wheels
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: toolchain-${{ inputs.tool }}
+          path: toolchain-dist/*.whl
+          if-no-files-found: error
+
+  smoke:
+    name: Test ${{ inputs.tool }} on ${{ matrix.target }}
+    needs: build
+    if: inputs.smoke
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-24.04
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-24.04-arm
+          - target: x86_64-apple-darwin
+            runner: macos-15-intel
+          - target: aarch64-apple-darwin
+            runner: macos-15
+          - target: x86_64-pc-windows-msvc
+            runner: windows-2025
+          - target: aarch64-pc-windows-msvc
+            runner: windows-11-arm
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Download wheels
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: toolchain-${{ inputs.tool }}
+          path: toolchain-dist
+
+      - name: Test wheels
+        env:
+          ASTRAL_DEV_TOOLCHAIN_TEST_SELECT: ${{ format('[{0}]', toJSON(inputs.tool)) }}
+        run: uv run --locked astral-dev-toolchain test --dist-dir toolchain-dist

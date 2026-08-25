@@ -2,10 +2,11 @@ import argparse
 import logging
 from pathlib import Path
 
+from astral_dev_toolchain_core import Toolchain
+
 from ._build import Builder
 from ._config import ImageConfig
 from ._plan import Plan
-from ._toolchain import Toolchain
 
 _LOG_FORMAT = "%(levelname)s %(message)s"
 
@@ -71,7 +72,7 @@ def _do_build(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None
 
     config = ImageConfig.load(args.config)
     plan = Plan.load(args, config)
-    toolchain = Toolchain.load(plan)
+    toolchain = Toolchain.load(plan.toolchain_dir, plan.selected_tools)
     logger.info("building %d tool(s)", len(toolchain.tools))
 
     for tool in toolchain.tools:

@@ -155,12 +155,14 @@ ARG TARGETARCH
 
 WORKDIR ${HOME}/zygote-workspace
 COPY .python-version pyproject.toml uv.lock ./
+COPY packages/astral-dev-toolchain-core/pyproject.toml packages/astral-dev-toolchain-core/pyproject.toml
 COPY packages/astral-dev-toolchain-zygote/pyproject.toml packages/astral-dev-toolchain-zygote/pyproject.toml
 RUN --mount=type=cache,id=astral-uv-${TARGETARCH},target=/app/.cache/uv,sharing=locked \
     uv sync --frozen \
         --package astral-dev-toolchain-zygote \
         --no-install-workspace
 
+COPY --link packages/astral-dev-toolchain-core packages/astral-dev-toolchain-core
 COPY --link packages/astral-dev-toolchain-zygote packages/astral-dev-toolchain-zygote
 RUN --mount=type=cache,id=astral-uv-${TARGETARCH},target=/app/.cache/uv,sharing=locked \
     uv sync --frozen \

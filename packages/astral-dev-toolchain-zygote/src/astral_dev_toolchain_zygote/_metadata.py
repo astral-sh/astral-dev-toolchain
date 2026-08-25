@@ -1,6 +1,6 @@
 """Package metadata shared across build backends."""
 
-from ._tool import Tool
+from astral_dev_toolchain_core import Tool
 
 _README_NOTICE = """\
 > **Build provenance:** This package is built and distributed by [Astral](https://astral.sh) as part of [`astral-dev-toolchain`](https://github.com/astral-sh/astral-dev-toolchain).

@@ -1,0 +1,61 @@
+name: Toolchain test
+
+on:
+  workflow_call:
+    inputs:
+      select:
+        description: "Tools to test (comma-separated tool.name values from build.toml)"
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      tool:
+        description: "Tool to test (tool.name from build.toml, e.g. cargo-hack)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: toolchain-test-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  select:
+    name: Select tools
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      tools: ${{ steps.select.outputs.tools }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+
+      - name: Select tools
+        id: select
+        env:
+          SELECT: ${{ inputs.select || inputs.tool }}
+        run: uv run --locked python scripts/ci-select-tools.py
+
+  test:
+    name: Test ${{ matrix.tool }}
+    needs: select
+    if: needs.select.outputs.tools != '[]'
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        tool: ${{ fromJSON(needs.select.outputs.tools) }}
+    uses: ./.github/workflows/toolchain-tool.yml
+    with:
+      tool: ${{ matrix.tool }}
+      smoke: true

@@ -18,3 +18,19 @@ name = "cargo-edit"
 repo = "https://github.com/killercup/cargo-edit"
 tag = "v0.13.13"
 commit = "138d4e2948ddcbf249c31c584b02e1b161a86221"
+
+[[test]]
+name = "cargo-add help"
+run = ["cargo-add", "--help"]
+
+[[test]]
+name = "cargo-rm help"
+run = ["cargo-rm", "--help"]
+
+[[test]]
+name = "cargo-upgrade help"
+run = ["cargo-upgrade", "--help"]
+
+[[test]]
+name = "cargo-set-version help"
+run = ["cargo-set-version", "--help"]

@@ -14,6 +14,8 @@ from pydantic import (
     StringConstraints,
 )
 
+type _NonEmptyString = Annotated[StrictStr, StringConstraints(min_length=1)]
+
 
 def _to_kebab(s: str) -> str:
     return s.replace("_", "-")
@@ -23,6 +25,19 @@ class _Model(BaseModel):
     model_config = ConfigDict(
         alias_generator=_to_kebab, populate_by_name=True, extra="forbid"
     )
+
+
+class ToolTest(_Model):
+    """A smoke test for an installed tool wheel."""
+
+    name: _NonEmptyString
+    """A human-readable name for the test."""
+
+    run: Annotated[tuple[_NonEmptyString, ...], Field(min_length=1)]
+    """The executable and arguments to run, without shell interpretation."""
+
+    exitcode: StrictInt = 0
+    """The exact expected process exit code."""
 
 
 class _ToolSpec(_Model):
@@ -46,9 +61,7 @@ class _ToolSpec(_Model):
 
 
 class ToolSource(_Model):
-    """
-    The tool's source origin. This is used to fetch the tool for building.
-    """
+    """The source origin used to fetch a tool for building."""
 
     repo: StrictStr
     commit: StrictStr
@@ -64,15 +77,20 @@ class RustToolSpec(_ToolSpec):
     """The package version, defaulting to the version from `cargo metadata`."""
 
     manifest: StrictStr = "Cargo.toml"
-    """
-    This is a relative path (within the source checkout) to the tool's `Cargo.toml`,
-    if the source checkout uses a workspace-style layout or otherwise doesn't expose the
-    right `Cargo.toml` at the repo root.
-    """
+    """The source-relative path to the tool's Cargo manifest."""
 
     no_default_features: StrictBool = False
+    """Whether to pass `--no-default-features` to the Rust build."""
+
+    features: tuple[_NonEmptyString, ...] = Field(default_factory=tuple)
+    """Cargo features to enable for the Rust build."""
+
+    cargo_config: StrictBool = True
     """
-    Whether to pass `--no-default-features` to the Rust build.
+    Whether to preserve Cargo configuration from the pinned source checkout.
+
+    This should only be disabled when that configuration conflicts with
+    cross-compilation and the required settings are supplied explicitly.
     """
 
     env: dict[StrictStr, StrictStr] = Field(default_factory=dict)
@@ -105,6 +123,7 @@ class Tool[T: ToolSpec](_Model):
     version: Literal[1] = 1
     tool: T
     source: ToolSource
+    tests: tuple[ToolTest, ...] = Field(default_factory=tuple, alias="test")
 
     @classmethod
     def load(cls, path: Path) -> Tool:

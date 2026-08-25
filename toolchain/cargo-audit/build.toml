@@ -9,3 +9,7 @@ manifest = "cargo-audit/Cargo.toml"
 repo = "https://github.com/rustsec/rustsec"
 tag = "cargo-audit/v0.22.2"
 commit = "281452c35cf0870969042374110f099a411bc185"
+
+[[test]]
+name = "help"
+run = ["cargo-audit", "--help"]

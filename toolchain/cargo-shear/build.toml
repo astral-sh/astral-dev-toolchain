@@ -3,8 +3,27 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-shear"
+# Match cargo-shear's upstream release builds, which use mimalloc. Disable
+# mimalloc's architecture-specific C flags because cargo-zigbuild cannot
+# translate them reliably while cross-compiling the macOS wheels.
+features = ["allocator", "mimalloc-safe/no_opt_arch"]
+# cargo-shear's pinned Cargo configuration contains only Windows CRT settings.
+# Its hybrid-CRT link arguments follow cargo-xwin's static-CRT arguments and use
+# /FORCE, producing executables that link successfully but crash at startup.
+# Ignore that configuration and supply the required static-CRT setting below.
+cargo-config = false
+
+[tool.env]
+# mimalloc is built against the static MSVC runtime. Tell cargo-xwin to use the
+# same runtime so that it links libucrt and configures CMake consistently.
+CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS = "-C target-feature=+crt-static"
+CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_RUSTFLAGS = "-C target-feature=+crt-static"
 
 [source]
 repo = "https://github.com/Boshen/cargo-shear"
 tag = "v1.13.4"
 commit = "1fdd1d97b964162cc8142c2945e18e0a54cd0f92"
+
+[[test]]
+name = "help"
+run = ["cargo-shear", "--help"]

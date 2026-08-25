@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "A CLI to manage and build tools within Astral's development toolchain"
 authors = [{ name = "William Woodruff", email = "william@yossarian.net" }]
 requires-python = ">=3.14"
-dependencies = []
+dependencies = ["astral-dev-toolchain-core"]
+
+[tool.uv.sources]
+astral-dev-toolchain-core = { workspace = true }
 
 [project.scripts]
 astral-dev-toolchain = "astral_dev_toolchain:main"

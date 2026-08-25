@@ -9,11 +9,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import tomli_w
+from astral_dev_toolchain_core import RustToolSpec, Tool
 from packaging.version import Version
 
 from ._metadata import readme_notice
 from ._plan import Plan
-from ._tool import RustToolSpec, Tool
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +42,8 @@ class RustBuilder:
         command = [self.plan.maturin_bin, "build", "--release", "--zig"]
         if self.tool.tool.no_default_features:
             command.append("--no-default-features")
+        if self.tool.tool.features:
+            command.extend(["--features", ",".join(self.tool.tool.features)])
         command.extend(["--out", self.plan.output_dir])
 
         if self.plan.dry_run and self.tool.tool.env:
@@ -64,6 +66,17 @@ class RustBuilder:
                 )
 
     def _prepare(self, src_dir: Path, build_dir: Path) -> None:
+        if not self.tool.tool.cargo_config:
+            # Cargo has no option to disable configuration discovered in a source
+            # tree, and higher-priority configuration cannot clear array values.
+            # The checkout is temporary, so remove both supported filenames.
+            cargo_dir = src_dir / ".cargo"
+            for name in ("config.toml", "config"):
+                config = cargo_dir / name
+                if config.is_file() or config.is_symlink():
+                    logger.info("ignoring upstream Cargo configuration: %s", config)
+                    config.unlink()
+
         manifest = src_dir / self.tool.tool.manifest
         package = self._manifest_metadata(src_dir, manifest)
 

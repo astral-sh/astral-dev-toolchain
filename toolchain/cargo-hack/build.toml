@@ -8,3 +8,7 @@ name = "cargo-hack"
 repo = "https://github.com/taiki-e/cargo-hack"
 tag = "v0.6.45"
 commit = "aad44e470198c08385a7b0c6d81284942a21a14b"
+
+[[test]]
+name = "help"
+run = ["cargo-hack", "hack", "--help"]

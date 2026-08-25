@@ -10,12 +10,12 @@ permissions:
   contents: read
 
 jobs:
-  toolchain-build:
-    name: Toolchain build
+  toolchain-test:
+    name: Toolchain test
     permissions:
       contents: read
       packages: read
-    uses: ./.github/workflows/toolchain-build.yml
+    uses: ./.github/workflows/test.yml
 
   lint:
     name: Lint
