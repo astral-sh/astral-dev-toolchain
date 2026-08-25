@@ -120,6 +120,7 @@ ENV GOTOOLCHAIN=local
 # Install manually allowlisted build dependencies.
 # llvm provides llvm-mt, which lld-link expects as mt.exe for manifest embedding.
 # Clang provides clang-cl for Windows builds.
+# CMake supports Rust crates with C or C++ components, such as mimalloc.
 RUN --mount=type=cache,id=astral-ubuntu-runtime-apt-lists-${TARGETARCH}-v2,target=/var/lib/apt/lists,sharing=locked \
     --mount=type=cache,id=astral-ubuntu-apt-archives-${TARGETARCH}-v1,target=/var/cache/apt,sharing=locked \
     apt update \
@@ -127,6 +128,7 @@ RUN --mount=type=cache,id=astral-ubuntu-runtime-apt-lists-${TARGETARCH}-v2,targe
         build-essential \
         llvm \
         clang \
+        cmake \
         pkg-config \
     && ln -s /usr/bin/llvm-mt /usr/bin/mt.exe
 
@@ -144,6 +146,7 @@ RUN cargo --version \
     && go version \
     && uv --version \
     && clang --version \
+    && cmake --version \
     && command -v llvm-mt
 
 FROM ${BOOTSTRAP_IMAGE} AS zygote
