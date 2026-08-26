@@ -62,6 +62,13 @@ uv run astral-dev-toolchain build --select cargo-hack
 
 Build artifacts are written to `toolchain-dist/` by default.
 
+Build only a subset of targets with one or more `--target` flags:
+
+```shell
+uv run astral-dev-toolchain build --select cargo-nextest \
+    --target aarch64-apple-darwin --target x86_64-apple-darwin
+```
+
 See `--help` for additional options.
 
 ## Testing built tools

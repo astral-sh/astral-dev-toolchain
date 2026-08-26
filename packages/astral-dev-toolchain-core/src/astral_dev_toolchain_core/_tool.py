@@ -40,6 +40,13 @@ class ToolTest(_Model):
     """The exact expected process exit code."""
 
 
+class ToolCI(_Model):
+    """CI settings for a tool."""
+
+    shard: StrictBool = False
+    """Build each target in a separate CI job."""
+
+
 class _ToolSpec(_Model):
     """Metadata shared by Rust and Go tools."""
 
@@ -123,6 +130,7 @@ class Tool[T: ToolSpec](_Model):
     version: Literal[1] = 1
     tool: T
     source: ToolSource
+    ci: ToolCI = Field(default_factory=ToolCI)
     tests: tuple[ToolTest, ...] = Field(default_factory=tuple, alias="test")
 
     @classmethod

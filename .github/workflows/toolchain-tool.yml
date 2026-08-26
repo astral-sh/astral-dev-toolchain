@@ -7,8 +7,17 @@ on:
         description: "Tool to build (tool.name from build.toml)"
         required: true
         type: string
+      targets:
+        description: "JSON array of image targets and their native smoke-test runners"
+        required: true
+        type: string
       smoke:
         description: "Run the tool's smoke tests on every native target"
+        required: false
+        default: false
+        type: boolean
+      shard-targets:
+        description: "Build each target in a separate job"
         required: false
         default: false
         type: boolean
@@ -18,12 +27,16 @@ permissions:
 
 jobs:
   build:
-    name: Build ${{ inputs.tool }}
+    name: Build ${{ inputs.tool }}${{ matrix.target && format(' ({0})', matrix.target) || '' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     permissions:
       contents: read
       packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.shard-targets && inputs.targets || '[{"target":""}]') }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -43,12 +56,18 @@ jobs:
       - name: Build tool
         env:
           TOOL: ${{ inputs.tool }}
-        run: uv run --locked astral-dev-toolchain build --select "$TOOL"
+          TARGET: ${{ matrix.target }}
+        run: |
+          args=()
+          if [[ -n "$TARGET" ]]; then
+            args+=(--target "$TARGET")
+          fi
+          uv run --locked astral-dev-toolchain build --select "$TOOL" "${args[@]}"
 
       - name: Upload wheels
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: toolchain-${{ inputs.tool }}
+          name: toolchain-${{ inputs.tool }}${{ matrix.target && format('-{0}', matrix.target) || '' }}
           path: toolchain-dist/*.whl
           if-no-files-found: error
 
@@ -61,19 +80,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - target: x86_64-unknown-linux-gnu
-            runner: ubuntu-24.04
-          - target: aarch64-unknown-linux-gnu
-            runner: ubuntu-24.04-arm
-          - target: x86_64-apple-darwin
-            runner: macos-15-intel
-          - target: aarch64-apple-darwin
-            runner: macos-15
-          - target: x86_64-pc-windows-msvc
-            runner: windows-2025
-          - target: aarch64-pc-windows-msvc
-            runner: windows-11-arm
+        include: ${{ fromJSON(inputs.targets) }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -86,7 +93,7 @@ jobs:
       - name: Download wheels
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: toolchain-${{ inputs.tool }}
+          name: toolchain-${{ inputs.tool }}${{ inputs.shard-targets && format('-{0}', matrix.target) || '' }}
           path: toolchain-dist
 
       - name: Test wheels

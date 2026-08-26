@@ -14,6 +14,9 @@ repo = "https://github.com/nextest-rs/nextest"
 tag = "cargo-nextest-0.9.143"
 commit = "60fa45f638ffc3f35e74afa65737f45fcd32db2a"
 
+[ci]
+shard = true
+
 [[test]]
 name = "help"
 run = ["cargo-nextest", "--help"]

@@ -21,4 +21,5 @@ class ImageConfig:
         if not isinstance(rust, dict):
             raise TypeError("missing or invalid [rust] table")
 
+        # New configs map triples to CI runners; existing images contain a list.
         return cls(targets=tuple(str(target) for target in rust["targets"]))

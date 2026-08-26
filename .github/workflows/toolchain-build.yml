@@ -28,6 +28,8 @@ jobs:
     timeout-minutes: 5
     outputs:
       tools: ${{ steps.select.outputs.tools }}
+      matrix: ${{ steps.select.outputs.matrix }}
+      targets: ${{ steps.select.outputs.targets }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -54,7 +56,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        tool: ${{ fromJSON(needs.select.outputs.tools) }}
+        include: ${{ fromJSON(needs.select.outputs.matrix) }}
     uses: ./.github/workflows/toolchain-tool.yml
     with:
       tool: ${{ matrix.tool }}
+      targets: ${{ needs.select.outputs.targets }}
+      shard-targets: ${{ matrix.shard }}

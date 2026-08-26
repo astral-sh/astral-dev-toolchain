@@ -16,7 +16,7 @@ class _ConfigModel(BaseModel):
 
 class RustConfig(_ConfigModel):
     toolchain: StrictStr
-    targets: tuple[StrictStr, ...]
+    targets: dict[StrictStr, StrictStr] | tuple[StrictStr, ...]
 
 
 class XwinConfig(_ConfigModel):
