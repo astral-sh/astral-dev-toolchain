@@ -4,6 +4,16 @@ version = 1
 backend = "rust"
 name = "cargo-xwin"
 
+[tool.env]
+# ring selects clang on Windows ARM64, but cargo-xwin supplies clang-cl flags.
+# https://github.com/briansmith/ring/blob/2723abbca9e83347d82b056d5b239c6604f786df/build.rs#L562-L565
+# Fixed upstream after ring 0.17.14:
+# https://github.com/briansmith/ring/commit/e6aa4029690009a248a292d8a7f35602da5a2882
+# Remove this override once cargo-xwin uses a ring release containing that fix.
+# Keep cl argument syntax and the existing SDK/CRT. The hyphenated target is
+# intentional: cargo-xwin overwrites the underscored CFLAGS variant.
+"CFLAGS_aarch64-pc-windows-msvc" = "--driver-mode=cl"
+
 [source]
 repo = "https://github.com/rust-cross/cargo-xwin"
 tag = "v0.23.1"
