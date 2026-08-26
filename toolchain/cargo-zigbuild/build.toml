@@ -1,0 +1,17 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "cargo-zigbuild"
+
+[source]
+repo = "https://github.com/rust-cross/cargo-zigbuild"
+tag = "v0.23.0"
+commit = "2165b45f241177af39d009f61ffb010a6ab2193d"
+
+[ci]
+shard = true
+
+[[test]]
+name = "help"
+run = ["cargo-zigbuild", "--help"]
