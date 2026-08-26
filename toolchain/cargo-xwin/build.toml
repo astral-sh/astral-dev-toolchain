@@ -1,0 +1,17 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "cargo-xwin"
+
+[source]
+repo = "https://github.com/rust-cross/cargo-xwin"
+tag = "v0.23.1"
+commit = "cb1c19572bd64c801f45c6fc96e234ccb0d5acc5"
+
+[ci]
+shard = true
+
+[[test]]
+name = "help"
+run = ["cargo-xwin", "--help"]
