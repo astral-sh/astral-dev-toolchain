@@ -15,4 +15,4 @@ shard = true
 
 [[test]]
 name = "help"
-run = ["cargo-dist", "--help"]
+run = ["dist", "--help"]
