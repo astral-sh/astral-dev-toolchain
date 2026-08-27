@@ -1,0 +1,18 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "cargo-dist"
+manifest = "cargo-dist/Cargo.toml"
+
+[source]
+repo = "https://github.com/axodotdev/cargo-dist"
+tag = "v0.32.0"
+commit = "6886366640dd4da83d33ba55cc04aa58423cbad2"
+
+[ci]
+shard = true
+
+[[test]]
+name = "help"
+run = ["dist", "--help"]
