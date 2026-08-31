@@ -46,6 +46,9 @@ class ToolCI(_Model):
     shard: StrictBool = False
     """Build each target in a separate CI job."""
 
+    exclude_targets: tuple[_NonEmptyString, ...] = Field(default_factory=tuple)
+    """Targets to omit when the upstream tool cannot be built for them."""
+
 
 class _ToolSpec(_Model):
     """Metadata shared by Rust and Go tools."""
