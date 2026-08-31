@@ -60,5 +60,5 @@ jobs:
     uses: ./.github/workflows/toolchain-tool.yml
     with:
       tool: ${{ matrix.tool }}
-      targets: ${{ needs.select.outputs.targets }}
+      targets: ${{ matrix.targets }}
       shard-targets: ${{ matrix.shard }}

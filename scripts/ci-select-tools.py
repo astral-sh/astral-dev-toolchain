@@ -78,8 +78,32 @@ def main() -> None:
         ]
 
     tools = sorted(set(selected))
-    matrix = [{"tool": tool, "shard": by_name[tool].ci.shard} for tool in tools]
     targets = _target_matrix()
+    known_targets = {target["target"] for target in targets}
+    matrix = []
+    for tool in tools:
+        ci = by_name[tool].ci
+        excluded_targets = set(ci.exclude_targets)
+        unknown_targets = sorted(excluded_targets - known_targets)
+        if unknown_targets:
+            raise SystemExit(
+                f"Unknown excluded targets for {tool}: "
+                f"{', '.join(map(repr, unknown_targets))}"
+            )
+        if excluded_targets and not ci.shard:
+            raise SystemExit(f"{tool} must enable CI sharding to exclude targets")
+
+        tool_targets = [
+            target for target in targets if target["target"] not in excluded_targets
+        ]
+        matrix.append(
+            {
+                "tool": tool,
+                "shard": ci.shard,
+                "targets": json.dumps(tool_targets),
+            }
+        )
+
     print(f"Selected tools: {', '.join(tools) or '(none)'}")
     with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
         print(f"tools={json.dumps(tools)}", file=output)
