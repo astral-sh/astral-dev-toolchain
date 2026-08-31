@@ -1,0 +1,17 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "cargo-depgraph"
+
+[source]
+repo = "https://codeberg.org/jplatte/cargo-depgraph"
+tag = "v1.6.0"
+commit = "1e5f6142637230e8128f559b23daf43e1d407c07"
+
+[ci]
+shard = true
+
+[[test]]
+name = "help"
+run = ["cargo-depgraph", "--help"]
