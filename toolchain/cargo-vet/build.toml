@@ -1,0 +1,17 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "cargo-vet"
+
+[source]
+repo = "https://github.com/mozilla/cargo-vet"
+tag = "v0.10.0"
+commit = "c23b21659b9902d97bef2f54c8e14529031092c5"
+
+[ci]
+shard = true
+
+[[test]]
+name = "help"
+run = ["cargo-vet", "--help"]
