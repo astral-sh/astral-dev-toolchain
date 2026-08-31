@@ -3,6 +3,7 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-outdated"
+features = ["vendored-openssl"]
 
 [source]
 repo = "https://github.com/kbknapp/cargo-outdated"
