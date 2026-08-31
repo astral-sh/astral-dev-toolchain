@@ -6,8 +6,8 @@ name = "cargo-vet"
 
 [source]
 repo = "https://github.com/mozilla/cargo-vet"
-tag = "v0.10.0"
-commit = "c23b21659b9902d97bef2f54c8e14529031092c5"
+tag = "v0.10.2"
+commit = "28f617ea97392d527799649db588a6dbb695da8d"
 
 [ci]
 shard = true
