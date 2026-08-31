@@ -1,0 +1,17 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "cargo-fuzz"
+
+[source]
+repo = "https://github.com/rust-fuzz/cargo-fuzz"
+tag = "0.13.2"
+commit = "984c861c8dfea28055254c5f1d2659ab2cd63f76"
+
+[ci]
+shard = true
+
+[[test]]
+name = "help"
+run = ["cargo-fuzz", "--help"]
