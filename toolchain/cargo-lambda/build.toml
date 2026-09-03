@@ -3,6 +3,7 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-lambda"
+manifest = "crates/cargo-lambda-cli/Cargo.toml"
 
 [source]
 repo = "https://github.com/cargo-lambda/cargo-lambda"
