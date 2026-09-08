@@ -222,7 +222,7 @@ restarts those cooldowns. Malformed observations require fixing the affected
 The offline suite uses simulated time and in-memory GitHub responses:
 
 ```shell
-uv run --dev python -m unittest discover -s tests
+uv run --dev pytest
 ```
 
 ### Rust backend
