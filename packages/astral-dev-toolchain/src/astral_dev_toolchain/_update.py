@@ -183,6 +183,125 @@ def _check_pin(github: GitHub, repo: str, tool: Tool) -> None:
         )
 
 
+def _version_floor(tool: Tool) -> tuple[str, Version]:
+    assert tool.update is not None
+    prefix = tool.update.tag_prefix
+    current = tag_version(tool.source.tag, prefix)
+    if current is None:
+        raise ValueError(f"{tool.tool.name}: pinned tag is not a stable version")
+    return prefix, current
+
+
+def _observe_tags(
+    tool: Tool,
+    repo: str,
+    tags: Mapping[str, str],
+    prior: Tool,
+    observed_at: datetime,
+) -> dict[str, ToolObservation]:
+    prefix, current = _version_floor(tool)
+    old = (
+        prior.update.observed
+        if prior.update is not None
+        and prior.update.tag_prefix == prefix
+        and repository(prior.source.repo) == repo
+        else {}
+    )
+    observed = {}
+    for tag, commit in tags.items():
+        version = tag_version(tag, prefix)
+        if version is None or version < current:
+            continue
+        observation = old.get(tag)
+        if version == current and observation is None:
+            continue
+        if observation is not None and observation.first_seen > observed_at:
+            raise ValueError(f"{repo}/{tag}: first-seen timestamp is in the future")
+        if observation is None or observation.commit != commit:
+            observation = ToolObservation(commit=commit, first_seen=observed_at)
+        observed[tag] = observation
+    return observed
+
+
+def _select_proposal(
+    tool: Tool, observed: Mapping[str, ToolObservation], observed_at: datetime
+) -> tuple[Proposal | None, list[str]]:
+    prefix, current = _version_floor(tool)
+    candidates, messages = [], []
+    for tag, observation in observed.items():
+        version = tag_version(tag, prefix)
+        assert version is not None
+        if version == current:
+            continue
+        eligible_at = observation.first_seen + COOLDOWN
+        if eligible_at > observed_at:
+            messages.append(
+                f"{tool.tool.name}: {tag} cooling down until {eligible_at.isoformat()}"
+            )
+        else:
+            candidates.append((version, tag, observation))
+    if not candidates:
+        messages.append(f"{tool.tool.name}: no eligible update")
+        return None, messages
+    version, tag, observation = max(candidates, key=lambda c: (c[0], c[1]))
+    if len({o.commit for v, _, o in candidates if v == version}) != 1:
+        raise ValueError(f"{tool.tool.name}: ambiguous tags for {version}")
+    return Proposal(
+        current, version, tag, observation.commit, observation.first_seen
+    ), messages
+
+
+def _scan_tool(
+    definition: Definition,
+    repo: str,
+    tags: Mapping[str, str],
+    github: GitHub,
+    prior: Tool,
+    observed_at: datetime,
+) -> tuple[Discovery, list[str]]:
+    tool = definition.tool
+    _check_pin(github, repo, tool)
+    if tags.get(tool.source.tag) != tool.source.commit:
+        raise ValueError(f"{repo}: pinned tag changed during discovery")
+    observed = _observe_tags(tool, repo, tags, prior, observed_at)
+    proposal, messages = _select_proposal(tool, observed, observed_at)
+    discovery = Discovery(definition, repo, observed, proposal)
+    discovery.render()
+    return discovery, messages
+
+
+def _scan_repository(
+    repo: str,
+    tools: list[Definition],
+    github: GitHub,
+    now: datetime | None,
+    previous: Mapping[str, Tool],
+) -> Scan:
+    minimums = [_version_floor(definition.tool) for definition in tools]
+
+    def relevant(tag: str) -> bool:
+        return any(
+            (version := tag_version(tag, prefix)) is not None and version >= current
+            for prefix, current in minimums
+        )
+
+    prefix = os.path.commonprefix([prefix for prefix, _ in minimums])
+    tags = github.tags(repo, prefix, include=relevant)
+    logger.debug("%s: fetched %d relevant tags", repo, len(tags))
+    observed_at = now or datetime.now(UTC)
+    # Keep results local until every tool succeeds: incomplete scans must not
+    # discard observations of missing tags or update only part of a repository.
+    result = Scan()
+    for definition in tools:
+        prior = previous.get(definition.tool.tool.name, definition.tool)
+        discovery, messages = _scan_tool(
+            definition, repo, tags, github, prior, observed_at
+        )
+        result.discoveries.append(discovery)
+        result.messages.extend(messages)
+    return result
+
+
 def scan(
     selected: list[Definition],
     github: GitHub,
@@ -205,94 +324,9 @@ def scan(
     for index, (repo, tools) in enumerate(groups.items(), 1):
         logger.info("[%d/%d] checking upstream tags for %s", index, len(groups), repo)
         try:
-            minimums = []
-            for definition in tools:
-                tool = definition.tool
-                assert tool.update is not None
-                prefix = tool.update.tag_prefix
-                current = tag_version(tool.source.tag, prefix)
-                if current is None:
-                    raise ValueError(
-                        f"{tool.tool.name}: pinned tag is not a stable version"
-                    )
-                minimums.append((prefix, current))
-
-            def relevant(tag: str, minimums=minimums) -> bool:
-                return any(
-                    (version := tag_version(tag, prefix)) is not None
-                    and version >= current
-                    for prefix, current in minimums
-                )
-
-            # Only a complete scan can discard observations of missing tags.
-            prefix = os.path.commonprefix([prefix for prefix, _ in minimums])
-            tags = github.tags(repo, prefix, include=relevant)
-            logger.debug("%s: fetched %d relevant tags", repo, len(tags))
-            observed_at = now or datetime.now(UTC)
-            discoveries, messages = [], []
-            for definition, (prefix, current) in zip(tools, minimums, strict=True):
-                tool = definition.tool
-                assert tool.update is not None
-                _check_pin(github, repo, tool)
-                if tags.get(tool.source.tag) != tool.source.commit:
-                    raise ValueError(f"{repo}: pinned tag changed during discovery")
-                prior = (previous or {}).get(tool.tool.name, tool)
-                old = (
-                    prior.update.observed
-                    if prior.update is not None
-                    and prior.update.tag_prefix == prefix
-                    and repository(prior.source.repo) == repo
-                    else {}
-                )
-                observed, candidates = {}, []
-                for tag, commit in tags.items():
-                    version = tag_version(tag, prefix)
-                    if version is None or version < current:
-                        continue
-                    observation = old.get(tag)
-                    if version == current and observation is None:
-                        continue
-                    if observation is not None and observation.first_seen > observed_at:
-                        raise ValueError(
-                            f"{repo}/{tag}: first-seen timestamp is in the future"
-                        )
-                    if observation is None or observation.commit != commit:
-                        observation = ToolObservation(
-                            commit=commit, first_seen=observed_at
-                        )
-                    observed[tag] = observation
-                    if version == current:
-                        continue
-                    eligible_at = observation.first_seen + COOLDOWN
-                    if eligible_at > observed_at:
-                        messages.append(
-                            f"{tool.tool.name}: {tag} cooling down until {eligible_at.isoformat()}"
-                        )
-                    else:
-                        candidates.append((version, tag, observation))
-                proposal = None
-                if candidates:
-                    version, tag, observation = max(
-                        candidates, key=lambda c: (c[0], c[1])
-                    )
-                    if len({o.commit for v, _, o in candidates if v == version}) != 1:
-                        raise ValueError(
-                            f"{tool.tool.name}: ambiguous tags for {version}"
-                        )
-                    proposal = Proposal(
-                        current,
-                        version,
-                        tag,
-                        observation.commit,
-                        observation.first_seen,
-                    )
-                else:
-                    messages.append(f"{tool.tool.name}: no eligible update")
-                discovery = Discovery(definition, repo, observed, proposal)
-                discovery.render()
-                discoveries.append(discovery)
-            result.discoveries.extend(discoveries)
-            result.messages.extend(messages)
+            scanned = _scan_repository(repo, tools, github, now, previous or {})
+            result.discoveries.extend(scanned.discoveries)
+            result.messages.extend(scanned.messages)
         except (GitHubError, ValueError) as error:
             logger.warning("%s: discovery failed: %s", repo, error)
             result.errors.append(f"{repo}: {error}")

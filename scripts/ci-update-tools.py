@@ -35,7 +35,7 @@ mutation($input: CreateCommitOnBranchInput!) {
 def branch_name(name: str) -> str:
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name):
         raise ValueError(f"tool name cannot be used in an update branch: {name}")
-    return f"codex/update/{name}"
+    return f"update/{name}"
 
 
 def ref_head(github: GitHub, repo: str, branch: str) -> str | None:

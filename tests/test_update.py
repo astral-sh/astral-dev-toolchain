@@ -195,6 +195,22 @@ def test_failed_discovery_preserves_observations_and_continues_other_repos(
     assert len(result.errors) == 1
 
 
+def test_failure_in_one_tool_preserves_all_tools_sharing_its_repository(
+    updater: Updater,
+):
+    other = definition(updater.root, "other", go=True)
+    other.write_text(
+        other.read_text().replace('version = "1.9.0"', 'version = "9.0.0"')
+    )
+    updater.observe()
+    before = {path: path.read_bytes() for path in (updater.path, other)}
+    result = updater.run_update(NOW + COOLDOWN)
+    assert len(result.errors) == 1
+    assert "explicit tool.version" in result.errors[0]
+    assert not result.discoveries
+    assert all(path.read_bytes() == content for path, content in before.items())
+
+
 def test_annotated_tags_use_advertised_peeled_commits(updater: Updater):
     for tag in ("v1.0.0", "v99.0.0-rc.1", "unrelated/v99.0.0"):
         updater.api.upstreams["upstream/example"][tag] = C
