@@ -27,3 +27,6 @@ commit = "1fdd1d97b964162cc8142c2945e18e0a54cd0f92"
 [[test]]
 name = "help"
 run = ["cargo-shear", "--help"]
+
+[update]
+github = true

@@ -15,3 +15,6 @@ shard = true
 [[test]]
 name = "help"
 run = ["cargo-fuzz", "--help"]
+
+[update]
+github = true

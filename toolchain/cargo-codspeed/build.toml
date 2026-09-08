@@ -14,3 +14,6 @@ commit = "69f74b65cb10ddf68e381ccafdaa300c2e8969da"
 name = "help"
 run = ["cargo-codspeed", "--help"]
 exitcode = 1
+
+[update]
+github = true

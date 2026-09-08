@@ -16,3 +16,6 @@ shard = true
 [[test]]
 name = "help"
 run = ["cargo-outdated", "--help"]
+
+[update]
+github = true

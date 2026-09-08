@@ -3,9 +3,11 @@ from ._tool import (
     RustToolSpec,
     Tool,
     ToolCI,
+    ToolObservation,
     ToolSource,
     ToolSpec,
     ToolTest,
+    ToolUpdate,
 )
 from ._toolchain import Toolchain
 
@@ -14,8 +16,10 @@ __all__ = [
     "RustToolSpec",
     "Tool",
     "ToolCI",
+    "ToolObservation",
     "ToolSource",
     "ToolSpec",
     "ToolTest",
+    "ToolUpdate",
     "Toolchain",
 ]

@@ -14,3 +14,6 @@ commit = "7f23d2e4684a789a85c50503004fb38a23c9ea58"
 [[test]]
 name = "help"
 run = ["cargo-insta", "--help"]
+
+[update]
+github = true

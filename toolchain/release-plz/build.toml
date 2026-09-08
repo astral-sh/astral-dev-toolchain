@@ -16,3 +16,7 @@ shard = true
 [[test]]
 name = "help"
 run = ["release-plz", "--help"]
+
+[update]
+github = true
+tag-prefix = "release-plz-"

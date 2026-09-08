@@ -1,0 +1,8 @@
+[
+  {"name": "v1.9.0", "commit": {"sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}},
+  {"name": "v1.10.0", "commit": {"sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"}},
+  {"name": "v2.0.0", "commit": {"sha": "cccccccccccccccccccccccccccccccccccccccc"}},
+  {"name": "v3.0.0-rc.1", "commit": {"sha": "dddddddddddddddddddddddddddddddddddddddd"}},
+  {"name": "another-tool/v99.0.0", "commit": {"sha": "dddddddddddddddddddddddddddddddddddddddd"}},
+  {"name": "nightly", "commit": {"sha": "dddddddddddddddddddddddddddddddddddddddd"}}
+]

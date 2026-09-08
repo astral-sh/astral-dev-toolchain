@@ -34,3 +34,6 @@ run = ["cargo-upgrade", "--help"]
 [[test]]
 name = "cargo-set-version help"
 run = ["cargo-set-version", "--help"]
+
+[update]
+github = true

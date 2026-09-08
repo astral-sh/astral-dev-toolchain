@@ -25,3 +25,6 @@ shard = true
 [[test]]
 name = "help"
 run = ["cargo-xwin", "--help"]
+
+[update]
+github = true

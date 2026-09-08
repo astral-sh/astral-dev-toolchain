@@ -12,3 +12,6 @@ commit = "be59056988acd54c7f984b7c85643daea3711b29"
 [[test]]
 name = "help"
 run = ["cargo-llvm-cov", "llvm-cov", "--help"]
+
+[update]
+github = true

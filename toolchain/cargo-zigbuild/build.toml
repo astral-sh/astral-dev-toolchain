@@ -15,3 +15,6 @@ shard = true
 [[test]]
 name = "help"
 run = ["cargo-zigbuild", "--help"]
+
+[update]
+github = true

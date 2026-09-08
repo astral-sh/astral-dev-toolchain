@@ -120,6 +120,111 @@ Builds validate this after cloning the source.
 
 See the definitions under [toolchain](./toolchain/) for concrete examples.
 
+### Updating tools
+
+GitHub-hosted tools can opt into automatic updates:
+
+```toml
+[update]
+github = true
+tag-prefix = "cargo-audit/" # Optional literal prefix; defaults to empty.
+```
+
+The updater strips the prefix and one optional leading `v`, then considers only
+stable `major.minor.patch` tags. It selects the highest newer version, including
+major upgrades. Prereleases and unrelated tags are ignored. Omit `[update]` or
+set `github = false` to keep a tool manual. Codeberg is not supported yet.
+
+Each candidate tag and resolved commit must have been observed at least seven
+days earlier. Observations live in the tool's own `build.toml`:
+
+```toml
+[update.observed."cargo-audit/v0.23.0"]
+commit = "0123456789abcdef0123456789abcdef01234567"
+first-seen = 2026-09-08T06:17:00Z
+```
+
+The updater maintains these entries automatically. A changed commit restarts
+its clock; a tag missing from a complete scan loses its observation and must
+wait again if it returns. Incomplete scans preserve the file. Commit dates and
+release dates do not shorten the cooldown. Polling cannot detect a change that
+happens and reverts between scans.
+
+The host CLI does not need Docker, Rust, or Go:
+
+```shell
+# Record observations and apply any updates already eligible.
+uv run astral-dev-toolchain update
+
+# Preview a selected tool without changing its build.toml.
+uv run astral-dev-toolchain update --select cargo-audit --dry-run
+```
+
+Normal runs save observations directly in the selected tools' definitions;
+keep those changes for subsequent runs. Dry runs do not start persisted
+cooldowns. `GH_TOKEN` (or `GITHUB_TOKEN`) can authenticate API reads; without
+either, GitHub's unauthenticated rate limit applies. The CLI only changes local
+files and never creates branches or PRs.
+
+An eligible update changes the tag and pinned commit together, preserves TOML
+comments, and removes `tool.rebuild`. An explicit `tool.version` is updated only
+when it matches the old tag's version; a custom override needs manual handling.
+The selected version's observation is retained, alongside any newer candidates.
+Missing or moved currently pinned tags also need manual review. The build's
+existing tag/commit verification catches tags that move after a proposal.
+
+#### Scheduled updates and review
+
+The **Toolchain update** workflow runs daily at 06:17 UTC. Its manual dispatch
+defaults to a read-only preview. It checks out the default branch and uses the
+built-in token; the repository must allow GitHub Actions to create pull requests.
+There are no additional credentials to configure.
+
+When newer tags appear, CI creates `codex/update/<tool>` and records observations
+in that branch's `build.toml`. The selected source pin stays unchanged during
+the cooldown. No PR is opened until a newer version qualifies. There is no
+separate state file or global state branch, and discovery never writes to `main`.
+
+Each qualifying update opens one draft PR per tool, with version and commit
+changes, timestamps, and an upstream comparison link. The bot refreshes untouched
+drafts as newer versions become eligible. Observations are included in the PR
+and travel with the definition when it is merged.
+
+Mark a PR **ready for review** to start normal CI, including the affected tool's
+builds and smoke tests. Both CI and zizmor listen for `ready_for_review` alongside
+their usual PR events. The bot checks GitHub's PR history and the branch's signed
+bot commits before writing. It stops after a PR has been marked ready, including
+if it is later converted back to draft, or when a human edits the branch.
+
+Once a PR is resolved, the tool can receive another proposal. Closing without
+merging suppresses that version and older versions. A newer eligible version
+can open another draft. Human commits made after closure are preserved; branches
+containing changes outside that tool's definition need manual cleanup before
+reuse. The workflow never merges or publishes packages.
+
+The workflow serializes runs and saves each definition with an atomic GitHub
+commit that checks the expected branch head. A concurrent human commit prevents
+the update. If a response is lost, the next run reads the branch and existing
+PRs to recover. A failed write prevents that tool's PR from being opened;
+independent tools can still proceed. API calls and retries are bounded, and
+errors appear in the Actions summary and fail the job.
+
+The first normal run records observations for newer tags; expect drafts at
+least seven days later. Mark the first draft ready and verify CI starts and
+subsequent updater runs leave it alone. The workflow only operates from a
+checkout matching the default branch, so deployment begins after merging it.
+Deleting a pending branch loses observations that have not reached `main` and
+restarts those cooldowns. Malformed observations require fixing the affected
+`build.toml`; failed scans do not silently reset them.
+
+#### Updater tests
+
+The offline suite uses simulated time and in-memory GitHub responses:
+
+```shell
+uv run --dev python -m unittest discover -s tests
+```
+
 ### Rust backend
 
 If you set `tool.backend = "rust"`, the following backend options become available:

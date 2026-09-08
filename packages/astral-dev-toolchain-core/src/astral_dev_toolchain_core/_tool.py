@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Annotated, Literal
 
 from pydantic import (
+    AwareDatetime,
     BaseModel,
     ConfigDict,
     Field,
@@ -48,6 +49,26 @@ class ToolCI(_Model):
 
     exclude_targets: tuple[_NonEmptyString, ...] = Field(default_factory=tuple)
     """Targets to omit when the upstream tool cannot be built for them."""
+
+
+class ToolObservation(_Model):
+    """The first observation of an upstream candidate tag and commit."""
+
+    commit: Annotated[StrictStr, StringConstraints(pattern=r"^[0-9a-f]{40}$")]
+    first_seen: AwareDatetime
+
+
+class ToolUpdate(_Model):
+    """Opt-in discovery of newer upstream tags."""
+
+    github: StrictBool
+    """Discover tags through the GitHub API."""
+
+    tag_prefix: StrictStr = ""
+    """Literal prefix to remove before parsing a tag's version."""
+
+    observed: dict[_NonEmptyString, ToolObservation] = Field(default_factory=dict)
+    """Candidate tags and their first-seen timestamps, maintained by the updater."""
 
 
 class _ToolSpec(_Model):
@@ -134,6 +155,7 @@ class Tool[T: ToolSpec](_Model):
     tool: T
     source: ToolSource
     ci: ToolCI = Field(default_factory=ToolCI)
+    update: ToolUpdate | None = None
     tests: tuple[ToolTest, ...] = Field(default_factory=tuple, alias="test")
 
     @classmethod

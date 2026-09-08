@@ -12,3 +12,6 @@ commit = "975fe108c4ee7bd2600d10758207b44ca3dae738"
 [[test]]
 name = "help"
 run = ["hyperfine", "--help"]
+
+[update]
+github = true
