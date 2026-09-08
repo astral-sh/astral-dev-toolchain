@@ -3,6 +3,7 @@ version = 1
 [tool]
 backend = "rust"
 name = "release-plz"
+manifest = "crates/release_plz/Cargo.toml"
 
 [source]
 repo = "https://github.com/release-plz/release-plz"
