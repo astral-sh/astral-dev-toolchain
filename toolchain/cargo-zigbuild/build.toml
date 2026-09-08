@@ -18,3 +18,19 @@ run = ["cargo-zigbuild", "--help"]
 
 [update]
 enabled = true
+
+[update.observed."v0.23.1"]
+commit = "a695463577da19b89c8daff8b7a49107e067ae49"
+first-seen = 2026-09-08T20:57:05.024797Z
+
+[update.observed."v0.23.2"]
+commit = "9ef2a444f09723f1b205017f241005819d4c0587"
+first-seen = 2026-09-08T20:57:05.024797Z
+
+[update.observed."v0.23.3"]
+commit = "cd38ab2c56dfb70bc7459dd007d8cc5d8aec94ad"
+first-seen = 2026-09-08T20:57:05.024797Z
+
+[update.observed."v0.23.4"]
+commit = "4258db97f6ac4bd1fc6e5c714d3f8d01db5c35e8"
+first-seen = 2026-09-08T20:57:05.024797Z
