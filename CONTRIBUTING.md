@@ -130,29 +130,12 @@ enabled = true
 tag-prefix = "cargo-audit/" # Optional; an initial v is stripped automatically.
 ```
 
-The updater selects newer stable `major.minor.patch` tags, including major
-upgrades, after observing the same tag and commit for seven days. Observations
-are stored in `build.toml`; moved or deleted candidate tags restart their cooldown.
-Commit and tag dates do not affect the cooldown.
-Omit `[update]` or set `enabled = false` to update a tool manually.
-
-Local updates use `git ls-remote --tags --sort=v:refname`, with Git's configured
-credentials and transports. No local clone or hosting-service API is required:
+Updates are normally performed automatically in CI, but can also be run locally:
 
 ```shell
 uv run astral-dev-toolchain update --select cargo-audit --dry-run
 uv run astral-dev-toolchain update
 ```
-
-Dry runs contact upstream but do not save observations or change pins. Normal
-runs preserve TOML comments and reset `tool.rebuild` when updating a pin. Use
-`-v` before `update` for request timings. Run updater tests with `uv run --dev pytest`.
-
-The daily **Toolchain update** workflow uses `gh` to keep observations on
-`update/<tool>` branches and open draft PRs after the cooldown. Enable GitHub Actions PR
-creation in repository settings. Untouched drafts refresh automatically;
-marking a PR **ready for review** starts CI and stops bot edits. Human branch
-edits also stop refreshes. Closing an unmerged PR suppresses that version.
 
 ### Rust backend
 
