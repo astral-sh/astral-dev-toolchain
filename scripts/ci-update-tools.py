@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote, urlencode
 
-from astral_dev_toolchain._github import GitHub, GitHubError
+from astral_dev_toolchain._git import Git, GitError
 from astral_dev_toolchain._update import (
     Definition,
     Discovery,
@@ -32,24 +32,59 @@ mutation($input: CreateCommitOnBranchInput!) {
 """
 
 
+def gh_api(
+    method: str, endpoint: str, *, data: object = None, paginate: bool = False
+) -> Any:
+    command = ["gh", "api", endpoint.lstrip("/"), "--method", method]
+    if data is not None:
+        command.extend(["--input", "-"])
+    if paginate:
+        command.extend(["--paginate", "--slurp"])
+    try:
+        result = subprocess.run(
+            command,
+            input=json.dumps(data) if data is not None else None,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=120,
+        )
+    except subprocess.CalledProcessError as error:
+        raise RuntimeError(
+            f"gh api {method} {endpoint}: {error.stderr.strip()}"
+        ) from error
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise RuntimeError(f"gh api {method} {endpoint}: {error}") from error
+    return json.loads(result.stdout) if result.stdout else None
+
+
+def gh_pages(endpoint: str) -> list[dict[str, Any]]:
+    separator = "&" if "?" in endpoint else "?"
+    pages = gh_api("GET", f"{endpoint}{separator}per_page=100", paginate=True)
+    if not all(
+        isinstance(page, list) and all(isinstance(entry, dict) for entry in page)
+        for page in pages
+    ):
+        raise ValueError(f"expected lists from {endpoint}")
+    return [entry for page in pages for entry in page]
+
+
 def branch_name(name: str) -> str:
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name):
         raise ValueError(f"tool name cannot be used in an update branch: {name}")
     return f"update/{name}"
 
 
-def ref_head(github: GitHub, repo: str, branch: str) -> str | None:
-    try:
-        raw = github.request(
-            "GET", f"/repos/{repo}/git/ref/heads/{quote(branch, safe='')}"
-        )
-    except GitHubError as error:
-        if error.status == 404:
-            return None
-        raise
-    if raw["ref"] != f"refs/heads/{branch}" or raw["object"]["type"] != "commit":
-        raise ValueError(f"unexpected branch reference: {branch}")
-    return raw["object"]["sha"]
+def ref_head(repo: str, branch: str) -> str | None:
+    refs = gh_api(
+        "GET", f"/repos/{repo}/git/matching-refs/heads/{quote(branch, safe='')}"
+    )
+    for ref in refs:
+        if ref["ref"] == f"refs/heads/{branch}":
+            if ref["object"]["type"] != "commit":
+                raise ValueError(f"unexpected branch reference: {branch}")
+            return ref["object"]["sha"]
+    return None
 
 
 @dataclass
@@ -63,7 +98,6 @@ class UpdateBranch:
 
 @dataclass
 class PullRequests:
-    github: GitHub
     repo: str
     base_branch: str
     base_head: str
@@ -71,7 +105,7 @@ class PullRequests:
 
     def read_definition(self, definition: Definition, head: str) -> Definition:
         path = definition.path.resolve().relative_to(self.root).as_posix()
-        raw = self.github.request(
+        raw = gh_api(
             "GET", f"/repos/{self.repo}/contents/{quote(path, safe='/')}?ref={head}"
         )
         if raw["encoding"] != "base64":
@@ -116,15 +150,13 @@ class PullRequests:
             return True
         return any(
             event["event"] == "ready_for_review"
-            for event in self.github.paginate(
-                f"/repos/{self.repo}/issues/{pr['number']}/timeline"
-            )
+            for event in gh_pages(f"/repos/{self.repo}/issues/{pr['number']}/timeline")
         )
 
     def load(self, definition: Definition) -> UpdateBranch:
         name = definition.tool.tool.name
         branch = branch_name(name)
-        head = ref_head(self.github, self.repo, branch)
+        head = ref_head(self.repo, branch)
         query = urlencode(
             {
                 "state": "all",
@@ -134,7 +166,7 @@ class PullRequests:
                 "direction": "desc",
             }
         )
-        prs = list(self.github.paginate(f"/repos/{self.repo}/pulls?{query}"))
+        prs = gh_pages(f"/repos/{self.repo}/pulls?{query}")
         if any(
             pr["head"]["ref"] != branch
             or pr["head"]["repo"] is None
@@ -156,7 +188,7 @@ class PullRequests:
         ]
         frozen = pr is not None and self.handed_off(pr, head)
         if head is not None and not frozen:
-            commit = self.github.request("GET", f"/repos/{self.repo}/commits/{head}")
+            commit = gh_api("GET", f"/repos/{self.repo}/commits/{head}")
             owned = (
                 (commit.get("author") or {}).get("login") == BOT
                 and (commit.get("committer") or {}).get("login") in {BOT, "web-flow"}
@@ -182,12 +214,12 @@ class PullRequests:
                         # Do not carry unrelated human changes into the next PR.
                         resolved = all(
                             change["filename"] == path
-                            for change in self.github.paginate(
+                            for change in gh_pages(
                                 f"/repos/{self.repo}/pulls/{closed['number']}/files"
                             )
                         )
                 if pr is None and not resolved:
-                    comparison = self.github.request(
+                    comparison = gh_api(
                         "GET", f"/repos/{self.repo}/compare/{head}...{self.base_head}"
                     )
                     resolved = comparison["status"] in {"ahead", "identical"}
@@ -202,19 +234,17 @@ class PullRequests:
     def writable(self, branch: UpdateBranch) -> bool:
         if branch.pr is None:
             return True
-        current = self.github.request(
-            "GET", f"/repos/{self.repo}/pulls/{branch.pr['number']}"
-        )
+        current = gh_api("GET", f"/repos/{self.repo}/pulls/{branch.pr['number']}")
         return not self.handed_off(current, branch.head)
 
     def save(self, discovery: Discovery, branch: UpdateBranch, content: str) -> None:
-        if ref_head(self.github, self.repo, self.base_branch) != self.base_head:
+        if ref_head(self.repo, self.base_branch) != self.base_head:
             raise ValueError(
                 "default branch changed during the run; retry against its new head"
             )
         name = branch_name(discovery.name)
         if branch.head is None:
-            self.github.request(
+            gh_api(
                 "POST",
                 f"/repos/{self.repo}/git/refs",
                 data={"ref": f"refs/heads/{name}", "sha": self.base_head},
@@ -223,7 +253,7 @@ class PullRequests:
         path = discovery.definition.path.resolve().relative_to(self.root).as_posix()
         # GitHub signs the commit and checks the expected head atomically. A
         # later run can recover from an uncertain response by reading this file.
-        response = self.github.request(
+        response = gh_api(
             "POST",
             "/graphql",
             data={
@@ -250,8 +280,6 @@ class PullRequests:
                 },
             },
         )
-        if response.get("errors"):
-            raise GitHubError(f"could not update {name}: {response['errors']}")
         branch.head = response["data"]["createCommitOnBranch"]["commit"]["oid"]
 
     def publish(self, discovery: Discovery, branch: UpdateBranch) -> str:
@@ -269,14 +297,14 @@ class PullRequests:
             f"| Commit | `{old.commit}` | `{proposal.commit}` |\n\n"
             f"First observed: {proposal.first_seen.isoformat()}  \n"
             f"Eligible after seven days: {proposal.eligible_at.isoformat()}\n\n"
-            f"[Compare upstream changes](https://github.com/{discovery.repo}/compare/{old.commit}...{proposal.commit}).\n\n"
+            f"Upstream repository: `{discovery.repo}`.\n\n"
             "Mark this PR **ready for review** to start CI, including tool builds and smoke tests. "
             "The updater refreshes untouched drafts and stops after review begins or a human pushes commits. "
             "Closing without merging suppresses this version and older versions.\n\n"
             f"<!-- astral-dev-toolchain-update: {marker} -->\n"
         )
         if branch.pr is None:
-            created = self.github.request(
+            created = gh_api(
                 "POST",
                 f"/repos/{self.repo}/pulls",
                 data={
@@ -289,7 +317,7 @@ class PullRequests:
             )
             return f"{discovery.name}: created draft PR #{created['number']}"
         if branch.pr["title"] != title or branch.pr["body"] != body:
-            self.github.request(
+            gh_api(
                 "PATCH",
                 f"/repos/{self.repo}/pulls/{branch.pr['number']}",
                 data={"title": title, "body": body},
@@ -299,7 +327,6 @@ class PullRequests:
 
 
 def run_updates(
-    github: GitHub,
     repo: str,
     root: Path,
     base_head: str,
@@ -307,16 +334,17 @@ def run_updates(
     dry_run: bool = False,
     now: datetime | None = None,
 ) -> Scan:
-    info = github.request("GET", f"/repos/{repo}")
+    git = Git()
+    info = gh_api("GET", f"/repos/{repo}")
     base_branch = info["default_branch"]
-    if ref_head(github, repo, base_branch) != base_head:
+    if ref_head(repo, base_branch) != base_head:
         raise ValueError("checkout must match the default branch head")
-    manager = PullRequests(github, repo, base_branch, base_head, root.resolve())
+    manager = PullRequests(repo, base_branch, base_head, root.resolve())
     branches, selected = {}, []
     result = Scan()
     for definition in definitions(root / "toolchain"):
         name = definition.tool.tool.name
-        if definition.tool.update is None or not definition.tool.update.github:
+        if definition.tool.update is None or not definition.tool.update.enabled:
             result.messages.append(f"{name}: automatic updates disabled")
             continue
         try:
@@ -328,11 +356,11 @@ def run_updates(
                 continue
             branches[name] = branch
             selected.append(definition)
-        except (GitHubError, ValueError) as error:
+        except (RuntimeError, ValueError) as error:
             result.errors.append(f"{name}: {error}")
     scanned = scan(
         selected,
-        github,
+        git,
         now,
         previous={
             name: branch.definition.tool
@@ -374,8 +402,8 @@ def run_updates(
                     )
                     discovery.proposal = None
             try:
-                recheck(discovery, github, now)
-            except (GitHubError, ValueError) as error:
+                recheck(discovery, git, now)
+            except (GitError, ValueError) as error:
                 discovery.proposal = None
                 result.errors.append(f"{discovery.name}: {error}")
             keep = (
@@ -411,7 +439,7 @@ def run_updates(
                 )
             if discovery.proposal is not None and manager.writable(branch):
                 result.messages.append(manager.publish(discovery, branch))
-        except (GitHubError, ValueError) as error:
+        except (RuntimeError, ValueError) as error:
             result.errors.append(f"{discovery.name}: {error}")
     return result
 
@@ -426,9 +454,9 @@ def main() -> None:
         if not re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", repo):
             raise ValueError("invalid GITHUB_REPOSITORY")
         head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-        result = run_updates(GitHub(), repo, Path.cwd(), head, dry_run=args.dry_run)
+        result = run_updates(repo, Path.cwd(), head, dry_run=args.dry_run)
         messages, errors = result.messages, result.errors
-    except (GitHubError, ValueError, OSError) as error:
+    except (RuntimeError, ValueError, OSError) as error:
         errors.append(str(error))
     summary = "## Tool updates\n\n" + "\n".join(f"- {message}" for message in messages)
     if errors:

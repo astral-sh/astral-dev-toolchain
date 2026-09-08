@@ -14,4 +14,4 @@ name = "help"
 run = ["hyperfine", "--help"]
 
 [update]
-github = true
+enabled = true

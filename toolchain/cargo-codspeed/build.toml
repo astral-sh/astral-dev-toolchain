@@ -16,4 +16,4 @@ run = ["cargo-codspeed", "--help"]
 exitcode = 1
 
 [update]
-github = true
+enabled = true

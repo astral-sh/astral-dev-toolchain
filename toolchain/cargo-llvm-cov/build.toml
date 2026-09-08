@@ -14,4 +14,4 @@ name = "help"
 run = ["cargo-llvm-cov", "llvm-cov", "--help"]
 
 [update]
-github = true
+enabled = true

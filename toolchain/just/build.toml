@@ -14,4 +14,4 @@ name = "help"
 run = ["just", "--help"]
 
 [update]
-github = true
+enabled = true

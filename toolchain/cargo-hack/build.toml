@@ -14,4 +14,4 @@ name = "help"
 run = ["cargo-hack", "hack", "--help"]
 
 [update]
-github = true
+enabled = true

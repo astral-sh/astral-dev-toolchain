@@ -36,4 +36,4 @@ name = "cargo-set-version help"
 run = ["cargo-set-version", "--help"]
 
 [update]
-github = true
+enabled = true

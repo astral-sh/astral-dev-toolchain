@@ -22,5 +22,5 @@ name = "help"
 run = ["cargo-nextest", "--help"]
 
 [update]
-github = true
+enabled = true
 tag-prefix = "cargo-nextest-"

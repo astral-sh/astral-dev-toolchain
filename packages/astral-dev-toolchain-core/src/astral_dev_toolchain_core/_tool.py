@@ -54,15 +54,17 @@ class ToolCI(_Model):
 class ToolObservation(_Model):
     """The first observation of an upstream candidate tag and commit."""
 
-    commit: Annotated[StrictStr, StringConstraints(pattern=r"^[0-9a-f]{40}$")]
+    commit: Annotated[
+        StrictStr, StringConstraints(pattern=r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
+    ]
     first_seen: AwareDatetime
 
 
 class ToolUpdate(_Model):
     """Opt-in discovery of newer upstream tags."""
 
-    github: StrictBool
-    """Discover tags through the GitHub API."""
+    enabled: StrictBool
+    """Discover newer tags through Git."""
 
     tag_prefix: StrictStr = ""
     """Literal prefix to remove before parsing a tag's version."""

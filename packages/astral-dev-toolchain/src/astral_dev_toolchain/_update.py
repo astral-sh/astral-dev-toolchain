@@ -10,14 +10,13 @@ from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from urllib.parse import urlsplit
 
 import tomlkit
 from astral_dev_toolchain_core import Tool, ToolObservation
 from packaging.version import Version
 from tomlkit.items import InlineTable, Table
 
-from ._github import GitHub, GitHubError
+from ._git import Git, GitError
 
 COOLDOWN = timedelta(days=7)
 _VERSION = re.compile(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)")
@@ -41,21 +40,6 @@ def atomic_write(path: Path, content: str) -> None:
     finally:
         if temporary is not None:
             temporary.unlink(missing_ok=True)
-
-
-def repository(url: str) -> str:
-    parsed = urlsplit(url)
-    parts = parsed.path.strip("/").removesuffix(".git").split("/")
-    if (
-        parsed.scheme != "https"
-        or parsed.netloc.lower() != "github.com"
-        or parsed.query
-        or parsed.fragment
-        or len(parts) != 2
-        or not all(re.fullmatch(r"[A-Za-z0-9_-][A-Za-z0-9_.-]*", p) for p in parts)
-    ):
-        raise ValueError(f"updating requires an HTTPS GitHub repository: {url}")
-    return "/".join(parts).lower()
 
 
 def tag_version(tag: str, prefix: str = "") -> Version | None:
@@ -167,15 +151,12 @@ class Scan:
     errors: list[str] = field(default_factory=list)
 
 
-def _check_pin(github: GitHub, repo: str, tool: Tool) -> None:
-    try:
-        commit = github.resolve_tag(repo, tool.source.tag)
-    except GitHubError as error:
-        if error.status == 404:
-            raise ValueError(
-                f"{tool.tool.name}: pinned tag {tool.source.tag} is missing; review manually"
-            ) from error
-        raise
+def _check_pin(tool: Tool, tags: Mapping[str, str]) -> None:
+    commit = tags.get(tool.source.tag)
+    if commit is None:
+        raise ValueError(
+            f"{tool.tool.name}: pinned tag {tool.source.tag} is missing; review manually"
+        )
     if commit != tool.source.commit:
         raise ValueError(
             f"{tool.tool.name}: pinned tag {tool.source.tag} moved from "
@@ -204,7 +185,7 @@ def _observe_tags(
         prior.update.observed
         if prior.update is not None
         and prior.update.tag_prefix == prefix
-        and repository(prior.source.repo) == repo
+        and prior.source.repo == repo
         else {}
     )
     observed = {}
@@ -255,14 +236,11 @@ def _scan_tool(
     definition: Definition,
     repo: str,
     tags: Mapping[str, str],
-    github: GitHub,
     prior: Tool,
     observed_at: datetime,
 ) -> tuple[Discovery, list[str]]:
     tool = definition.tool
-    _check_pin(github, repo, tool)
-    if tags.get(tool.source.tag) != tool.source.commit:
-        raise ValueError(f"{repo}: pinned tag changed during discovery")
+    _check_pin(tool, tags)
     observed = _observe_tags(tool, repo, tags, prior, observed_at)
     proposal, messages = _select_proposal(tool, observed, observed_at)
     discovery = Discovery(definition, repo, observed, proposal)
@@ -273,7 +251,7 @@ def _scan_tool(
 def _scan_repository(
     repo: str,
     tools: list[Definition],
-    github: GitHub,
+    git: Git,
     now: datetime | None,
     previous: Mapping[str, Tool],
 ) -> Scan:
@@ -286,7 +264,7 @@ def _scan_repository(
         )
 
     prefix = os.path.commonprefix([prefix for prefix, _ in minimums])
-    tags = github.tags(repo, prefix, include=relevant)
+    tags = git.tags(repo, prefix, include=relevant)
     logger.debug("%s: fetched %d relevant tags", repo, len(tags))
     observed_at = now or datetime.now(UTC)
     # Keep results local until every tool succeeds: incomplete scans must not
@@ -294,9 +272,7 @@ def _scan_repository(
     result = Scan()
     for definition in tools:
         prior = previous.get(definition.tool.tool.name, definition.tool)
-        discovery, messages = _scan_tool(
-            definition, repo, tags, github, prior, observed_at
-        )
+        discovery, messages = _scan_tool(definition, repo, tags, prior, observed_at)
         result.discoveries.append(discovery)
         result.messages.extend(messages)
     return result
@@ -304,7 +280,7 @@ def _scan_repository(
 
 def scan(
     selected: list[Definition],
-    github: GitHub,
+    git: Git,
     now: datetime | None = None,
     *,
     previous: Mapping[str, Tool] | None = None,
@@ -313,39 +289,36 @@ def scan(
     groups: dict[str, list[Definition]] = defaultdict(list)
     for definition in selected:
         tool = definition.tool
-        if tool.update is None or not tool.update.github:
+        if tool.update is None or not tool.update.enabled:
             result.messages.append(f"{tool.tool.name}: automatic updates disabled")
             continue
-        try:
-            groups[repository(tool.source.repo)].append(definition)
-        except ValueError as error:
-            result.errors.append(str(error))
+        groups[tool.source.repo].append(definition)
 
     for index, (repo, tools) in enumerate(groups.items(), 1):
         logger.info("[%d/%d] checking upstream tags for %s", index, len(groups), repo)
         try:
-            scanned = _scan_repository(repo, tools, github, now, previous or {})
+            scanned = _scan_repository(repo, tools, git, now, previous or {})
             result.discoveries.extend(scanned.discoveries)
             result.messages.extend(scanned.messages)
-        except (GitHubError, ValueError) as error:
+        except (GitError, ValueError) as error:
             logger.warning("%s: discovery failed: %s", repo, error)
             result.errors.append(f"{repo}: {error}")
     return result
 
 
-def recheck(discovery: Discovery, github: GitHub, now: datetime | None = None) -> None:
+def recheck(discovery: Discovery, git: Git, now: datetime | None = None) -> None:
     """Recheck a proposal, recording moved or deleted candidates in its manifest."""
     proposal = discovery.proposal
     if proposal is None:
         return
-    _check_pin(github, discovery.repo, discovery.definition.tool)
-    try:
-        commit = github.resolve_tag(discovery.repo, proposal.tag)
-    except GitHubError as error:
-        if error.status == 404:
-            discovery.observed.pop(proposal.tag, None)
-            discovery.proposal = None
-        raise
+    tool = discovery.definition.tool
+    tags = git.resolve_tags(discovery.repo, (tool.source.tag, proposal.tag))
+    _check_pin(tool, tags)
+    commit = tags.get(proposal.tag)
+    if commit is None:
+        discovery.observed.pop(proposal.tag, None)
+        discovery.proposal = None
+        raise ValueError(f"{discovery.name}: candidate tag {proposal.tag} is missing")
     if commit != proposal.commit:
         discovery.observed[proposal.tag] = ToolObservation(
             commit=commit, first_seen=now or datetime.now(UTC)
@@ -359,16 +332,16 @@ def update_local(
     selected: Collection[str] = (),
     *,
     dry_run: bool = False,
-    github: GitHub | None = None,
+    git: Git | None = None,
     now: datetime | None = None,
 ) -> Scan:
-    github = github or GitHub()
-    result = scan(definitions(directory, selected), github, now)
+    git = git or Git()
+    result = scan(definitions(directory, selected), git, now)
     for discovery in result.discoveries:
         try:
             try:
-                recheck(discovery, github, now)
-            except (GitHubError, ValueError) as error:
+                recheck(discovery, git, now)
+            except (GitError, ValueError) as error:
                 # A changed/deleted candidate still needs its observation saved;
                 # other failures must not apply the unverified proposal.
                 discovery.proposal = None

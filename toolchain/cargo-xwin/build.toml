@@ -27,4 +27,4 @@ name = "help"
 run = ["cargo-xwin", "--help"]
 
 [update]
-github = true
+enabled = true

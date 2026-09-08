@@ -22,4 +22,4 @@ name = "help"
 run = ["rg", "--help"]
 
 [update]
-github = true
+enabled = true

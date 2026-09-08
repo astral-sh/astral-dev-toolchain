@@ -28,4 +28,4 @@ name = "help"
 run = ["cargo-lambda", "--help"]
 
 [update]
-github = true
+enabled = true

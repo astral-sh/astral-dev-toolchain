@@ -18,5 +18,5 @@ name = "help"
 run = ["release-plz", "--help"]
 
 [update]
-github = true
+enabled = true
 tag-prefix = "release-plz-"

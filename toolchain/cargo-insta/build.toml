@@ -16,4 +16,4 @@ name = "help"
 run = ["cargo-insta", "--help"]
 
 [update]
-github = true
+enabled = true

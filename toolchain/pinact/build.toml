@@ -17,4 +17,4 @@ name = "help"
 run = ["pinact", "--help"]
 
 [update]
-github = true
+enabled = true

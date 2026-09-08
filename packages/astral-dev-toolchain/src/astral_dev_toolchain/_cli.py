@@ -117,7 +117,7 @@ def run() -> None:
     )
 
     update = subcommands.add_parser(
-        "update", help="Update tools from upstream GitHub tags"
+        "update", help="Update tools from upstream Git tags"
     )
     update.set_defaults(func=_do_update)
     update.add_argument(

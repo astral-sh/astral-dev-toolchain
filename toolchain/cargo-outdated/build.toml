@@ -18,4 +18,4 @@ name = "help"
 run = ["cargo-outdated", "--help"]
 
 [update]
-github = true
+enabled = true

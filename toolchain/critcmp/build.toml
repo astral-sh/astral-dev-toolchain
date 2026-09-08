@@ -17,4 +17,4 @@ name = "help"
 run = ["critcmp", "--help"]
 
 [update]
-github = true
+enabled = true
