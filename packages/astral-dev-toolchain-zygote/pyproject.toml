@@ -9,7 +9,7 @@ dependencies = [
     "go-to-wheel==0.2",
     "maturin>=1.14.1",
     "packaging>=26.3",
-    "tomli-w>=1.2.0",
+    "tomlkit>=0.13.3",
     "ziglang>=0.16.0",
 ]
 

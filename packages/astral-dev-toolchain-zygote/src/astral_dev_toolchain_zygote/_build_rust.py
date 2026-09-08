@@ -8,7 +8,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-import tomli_w
+import tomlkit
 from astral_dev_toolchain_core import RustToolSpec, Tool
 from packaging.version import Version
 
@@ -108,7 +108,7 @@ class RustBuilder:
             "tool": {"maturin": {"bindings": "bin", "manifest-path": str(manifest)}},
         }
         (build_dir / "pyproject.toml").write_text(
-            tomli_w.dumps(pyproject), encoding="utf-8"
+            tomlkit.dumps(pyproject), encoding="utf-8"
         )
 
     def _prepare_readme(self, readme: Path, build_dir: Path) -> str:

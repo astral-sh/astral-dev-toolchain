@@ -8,6 +8,7 @@ from functools import partial
 from pathlib import Path
 
 import pytest
+import tomlkit
 
 from astral_dev_toolchain import _update
 
@@ -68,32 +69,29 @@ def definition(
 ) -> Path:
     path = root / "toolchain" / name / "build.toml"
     path.parent.mkdir(parents=True, exist_ok=True)
-    spec = (
-        'backend = "go"\nversion = "1.9.0"\ndirectory = "cmd/example"'
-        if go
-        else 'backend = "rust"'
-    )
+    spec = {
+        "name": name,
+        "backend": "go" if go else "rust",
+        "rebuild": tomlkit.integer(2).comment("Reset for the next upstream release."),
+    }
+    if go:
+        spec.update(version="1.9.0", directory="cmd/example")
     path.write_text(
-        f'''version = 1
-
-[tool]
-name = "{name}"
-{spec}
-rebuild = 2 # Reset for the next upstream release.
-
-[source]
-repo = "{repo}"
-tag = "{prefix}v1.9.0" # Keep this comment.
-commit = "{commit}"
-
-[update]
-enabled = true
-tag-prefix = "{prefix}"
-
-[[test]]
-name = "help"
-run = ["example", "--help"]
-''',
+        tomlkit.dumps(
+            {
+                "version": 1,
+                "tool": spec,
+                "source": {
+                    "repo": repo,
+                    "tag": tomlkit.string(f"{prefix}v1.9.0").comment(
+                        "Keep this comment."
+                    ),
+                    "commit": commit,
+                },
+                "update": {"enabled": True, "tag-prefix": prefix},
+                "test": [{"name": "help", "run": ["example", "--help"]}],
+            }
+        ),
         encoding="utf-8",
     )
     return path
