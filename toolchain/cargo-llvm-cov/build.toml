@@ -12,3 +12,10 @@ commit = "be59056988acd54c7f984b7c85643daea3711b29"
 [[test]]
 name = "help"
 run = ["cargo-llvm-cov", "llvm-cov", "--help"]
+
+[update]
+enabled = true
+
+[update.observed."v0.9.1"]
+commit = "0dc905679ae6b4740b186f6e2c2ef1ab78fb76d7"
+first-seen = 2026-09-08T20:57:03.699997Z

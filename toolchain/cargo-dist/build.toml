@@ -16,3 +16,6 @@ shard = true
 [[test]]
 name = "help"
 run = ["dist", "--help"]
+
+[update]
+enabled = true

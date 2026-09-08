@@ -15,3 +15,6 @@ commit = "b1a554a82ef4f55533237e49c19a24ddf0045100"
 [[test]]
 name = "help"
 run = ["pinact", "--help"]
+
+[update]
+enabled = true

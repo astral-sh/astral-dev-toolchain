@@ -12,6 +12,7 @@ from uuid import uuid4
 from astral_dev_toolchain_core import Toolchain
 
 from ._test import Tester
+from ._update import update_local
 
 _LOCAL_IMAGE = "astral-dev-toolchain-zygote:local"
 _LOG_FORMAT = "%(levelname)s %(message)s"
@@ -115,6 +116,23 @@ def run() -> None:
         help="Host directory containing wheels to test (default: ./toolchain-dist)",
     )
 
+    update = subcommands.add_parser(
+        "update", help="Update tools from upstream Git tags"
+    )
+    update.set_defaults(func=_do_update)
+    update.add_argument(
+        "--select",
+        default=[],
+        nargs="+",
+        metavar="NAME",
+        help="List of toolchain tools to update, by tool.name",
+    )
+    update.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Report updates without writing build.toml files",
+    )
+
     args = parser.parse_args()
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
@@ -204,4 +222,22 @@ def _do_test(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
     toolchain = Toolchain.load(args.toolchain_dir, selected)
     logger.info("testing %d tool(s)", len(toolchain.tools))
     if not Tester(toolchain=toolchain, dist_dir=dist_dir, uv_bin=uv).run():
+        raise SystemExit(1)
+
+
+def _do_update(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
+    if args.bootstrap_image or args.image:
+        parser.error("--bootstrap-image and --image can only be used with build")
+    try:
+        result = update_local(args.toolchain_dir, args.select, dry_run=args.dry_run)
+    except KeyboardInterrupt:
+        logger.info("update interrupted")
+        raise SystemExit(130) from None
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
+    for message in result.messages:
+        logger.info("%s", message)
+    for error in result.errors:
+        logger.error("%s", error)
+    if result.errors:
         raise SystemExit(1)

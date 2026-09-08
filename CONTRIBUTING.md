@@ -120,6 +120,23 @@ Builds validate this after cloning the source.
 
 See the definitions under [toolchain](./toolchain/) for concrete examples.
 
+### Updating tools
+
+Opt a tool hosted in any Git repository into automatic updates in its `build.toml`:
+
+```toml
+[update]
+enabled = true
+tag-prefix = "cargo-audit/" # Optional; an initial v is stripped automatically.
+```
+
+Updates are normally performed automatically in CI, but can also be run locally:
+
+```shell
+uv run astral-dev-toolchain update --select cargo-audit --dry-run
+uv run astral-dev-toolchain update
+```
+
 ### Rust backend
 
 If you set `tool.backend = "rust"`, the following backend options become available:

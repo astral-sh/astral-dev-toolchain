@@ -20,3 +20,7 @@ shard = true
 [[test]]
 name = "help"
 run = ["cargo-nextest", "--help"]
+
+[update]
+enabled = true
+tag-prefix = "cargo-nextest-"

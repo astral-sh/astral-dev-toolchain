@@ -15,3 +15,6 @@ shard = true
 [[test]]
 name = "help"
 run = ["critcmp", "--help"]
+
+[update]
+enabled = true

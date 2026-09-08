@@ -13,3 +13,7 @@ commit = "281452c35cf0870969042374110f099a411bc185"
 [[test]]
 name = "help"
 run = ["cargo-audit", "--help"]
+
+[update]
+enabled = true
+tag-prefix = "cargo-audit/"

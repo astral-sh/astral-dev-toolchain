@@ -20,3 +20,6 @@ exclude-targets = ["aarch64-pc-windows-msvc"]
 [[test]]
 name = "help"
 run = ["cargo-vet", "--help"]
+
+[update]
+enabled = true
