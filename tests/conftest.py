@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pytest
 import tomlkit
-
 from astral_dev_toolchain import _update
 
 
