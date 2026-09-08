@@ -1,27 +1,62 @@
-"""In-memory Git tag advertisements; tests never contact upstream."""
+"""Local Git repositories and tool definitions for updater tests."""
 
-import json
-from collections.abc import Collection
+import os
+import subprocess
+from dataclasses import dataclass
 from datetime import UTC, datetime
-from fnmatch import fnmatchcase
 from pathlib import Path
 
-from astral_dev_toolchain._git import Git, GitError
-
-A = "a" * 40
-B = "b" * 40
-C = "c" * 40
-D = "d" * 40
 NOW = datetime(2026, 9, 8, 6, 17, tzinfo=UTC)
-REMOTE = "https://example.test/upstream/example.git"
+
+
+@dataclass
+class GitRepo:
+    path: Path
+    commits: tuple[str, ...] = ()
+
+    @property
+    def url(self) -> str:
+        return self.path.as_uri()
+
+    def run(self, *args: str, input: str | None = None) -> str:
+        env = os.environ | {
+            "GIT_CONFIG_GLOBAL": os.devnull,
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_AUTHOR_NAME": "Test",
+            "GIT_AUTHOR_EMAIL": "test@example.com",
+            "GIT_COMMITTER_NAME": "Test",
+            "GIT_COMMITTER_EMAIL": "test@example.com",
+            "GIT_AUTHOR_DATE": "2000-01-01T00:00:00+00:00",
+            "GIT_COMMITTER_DATE": "2000-01-01T00:00:00+00:00",
+        }
+        return subprocess.run(
+            ["git", "-C", str(self.path), "-c", "tag.gpgSign=false", *args],
+            input=input,
+            env=env,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        ).stdout.strip()
+
+    def tag(self, name: str, target: str, *, message: str | None = None) -> None:
+        args = ["tag", "--force"]
+        if message is not None:
+            args.extend(["--annotate", "--message", message])
+        self.run(*args, name, target)
+
+    def delete_tag(self, name: str) -> None:
+        self.run("tag", "--delete", name)
 
 
 def definition(
     root: Path,
     name: str = "example",
-    repo: str = REMOTE,
     *,
+    repo: str,
+    commit: str,
     go: bool = False,
+    prefix: str = "",
 ) -> Path:
     path = root / "toolchain" / name / "build.toml"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -40,11 +75,12 @@ rebuild = 2 # Reset for the next upstream release.
 
 [source]
 repo = "{repo}"
-tag = "v1.9.0" # Keep this comment.
-commit = "{A}"
+tag = "{prefix}v1.9.0" # Keep this comment.
+commit = "{commit}"
 
 [update]
 enabled = true
+tag-prefix = "{prefix}"
 
 [[test]]
 name = "help"
@@ -53,32 +89,3 @@ run = ["example", "--help"]
         encoding="utf-8",
     )
     return path
-
-
-class MemoryGit(Git):
-    def __init__(self):
-        fixture = json.loads((Path(__file__).parent / "fixtures/tags.json").read_text())
-        self.upstreams = {
-            REMOTE: {tag["name"]: tag["commit"]["sha"] for tag in fixture}
-        }
-        self.annotated: dict[tuple[str, str], str] = {}
-        self.calls: list[tuple[str, tuple[str, ...]]] = []
-        self.failures: list[str] = []
-
-    def _ls_remote(self, repo: str, patterns: Collection[str]) -> str:
-        self.calls.append((repo, tuple(patterns)))
-        if repo in self.failures:
-            self.failures.remove(repo)
-            raise GitError("injected Git failure")
-        lines = []
-        for tag, commit in self.upstreams[repo].items():
-            annotation = self.annotated.get((repo, tag))
-            refs = {f"refs/tags/{tag}": annotation or commit}
-            if annotation:
-                refs[f"refs/tags/{tag}^{{}}"] = commit
-            for ref, target in refs.items():
-                if not patterns or any(
-                    fnmatchcase(ref, pattern) for pattern in patterns
-                ):
-                    lines.append(f"{target}\t{ref}")
-        return "\n".join(lines)
