@@ -1,5 +1,6 @@
 """Discover upstream updates and keep their observations in build.toml."""
 
+import logging
 import os
 import re
 import tempfile
@@ -20,6 +21,8 @@ from ._github import GitHub, GitHubError
 
 COOLDOWN = timedelta(days=7)
 _VERSION = re.compile(r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)")
+
+logger = logging.getLogger(__name__)
 
 
 def atomic_write(path: Path, content: str) -> None:
@@ -199,24 +202,40 @@ def scan(
         except ValueError as error:
             result.errors.append(str(error))
 
-    for repo, tools in groups.items():
+    for index, (repo, tools) in enumerate(groups.items(), 1):
+        logger.info("[%d/%d] checking upstream tags for %s", index, len(groups), repo)
         try:
-            # Only a complete scan can discard observations of missing tags.
-            tags = github.tags(repo)
-            observed_at = now or datetime.now(UTC)
-            discoveries, messages = [], []
+            minimums = []
             for definition in tools:
                 tool = definition.tool
                 assert tool.update is not None
-                _check_pin(github, repo, tool)
-                if tags.get(tool.source.tag) != tool.source.commit:
-                    raise ValueError(f"{repo}: pinned tag changed during discovery")
                 prefix = tool.update.tag_prefix
                 current = tag_version(tool.source.tag, prefix)
                 if current is None:
                     raise ValueError(
                         f"{tool.tool.name}: pinned tag is not a stable version"
                     )
+                minimums.append((prefix, current))
+
+            def relevant(tag: str, minimums=minimums) -> bool:
+                return any(
+                    (version := tag_version(tag, prefix)) is not None
+                    and version >= current
+                    for prefix, current in minimums
+                )
+
+            # Only a complete scan can discard observations of missing tags.
+            prefix = os.path.commonprefix([prefix for prefix, _ in minimums])
+            tags = github.tags(repo, prefix, include=relevant)
+            logger.debug("%s: fetched %d relevant tags", repo, len(tags))
+            observed_at = now or datetime.now(UTC)
+            discoveries, messages = [], []
+            for definition, (prefix, current) in zip(tools, minimums, strict=True):
+                tool = definition.tool
+                assert tool.update is not None
+                _check_pin(github, repo, tool)
+                if tags.get(tool.source.tag) != tool.source.commit:
+                    raise ValueError(f"{repo}: pinned tag changed during discovery")
                 prior = (previous or {}).get(tool.tool.name, tool)
                 old = (
                     prior.update.observed
@@ -275,6 +294,7 @@ def scan(
             result.discoveries.extend(discoveries)
             result.messages.extend(messages)
         except (GitHubError, ValueError) as error:
+            logger.warning("%s: discovery failed: %s", repo, error)
             result.errors.append(f"{repo}: {error}")
     return result
 

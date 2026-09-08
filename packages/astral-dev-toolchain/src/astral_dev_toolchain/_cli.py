@@ -230,6 +230,9 @@ def _do_update(parser: argparse.ArgumentParser, args: argparse.Namespace) -> Non
         parser.error("--bootstrap-image and --image can only be used with build")
     try:
         result = update_local(args.toolchain_dir, args.select, dry_run=args.dry_run)
+    except KeyboardInterrupt:
+        logger.info("update interrupted")
+        raise SystemExit(130) from None
     except (OSError, ValueError) as error:
         parser.error(str(error))
     for message in result.messages:

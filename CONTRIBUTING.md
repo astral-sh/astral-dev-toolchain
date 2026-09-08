@@ -150,7 +150,7 @@ wait again if it returns. Incomplete scans preserve the file. Commit dates and
 release dates do not shorten the cooldown. Polling cannot detect a change that
 happens and reverts between scans.
 
-The host CLI does not need Docker, Rust, or Go:
+The host CLI needs Git, but does not need Docker, Rust, or Go:
 
 ```shell
 # Record observations and apply any updates already eligible.
@@ -165,6 +165,14 @@ keep those changes for subsequent runs. Dry runs do not start persisted
 cooldowns. `GH_TOKEN` (or `GITHUB_TOKEN`) can authenticate API reads; without
 either, GitHub's unauthenticated rate limit applies. The CLI only changes local
 files and never creates branches or PRs.
+
+Discovery uses one `git ls-remote --tags` invocation per repository, using the
+selected tools' common tag prefix. Git returns peeled IDs for annotated tags
+without separate API requests. Pinned tags and eligible candidates are still
+rechecked through the GitHub API. Git commands time out after 30 seconds and
+never prompt for credentials; `GH_TOKEN` or `GITHUB_TOKEN` also authenticates Git
+reads. Dry runs still contact upstream. Progress is logged per repository; use
+`astral-dev-toolchain -v update --dry-run` to see Git and API request timings.
 
 An eligible update changes the tag and pinned commit together, preserves TOML
 comments, and removes `tool.rebuild`. An explicit `tool.version` is updated only

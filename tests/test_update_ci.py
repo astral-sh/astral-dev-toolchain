@@ -415,9 +415,7 @@ def test_partial_failure_does_not_block_other_tools(prs: PullRequests):
     prs.api.upstreams["upstream/other"] = {"v1.9.0": A, "v1.10.0": B}
     prs.main = prs.api.initialize(prs.root)
     prs.run_updates()
-    prs.api.failures.append(
-        ("GET", "/repos/upstream/example/tags?per_page=100&page=1", "before")
-    )
+    prs.api.failures.append(("git ls-remote", "upstream/example", "before"))
     result = prs.run_updates(NOW + COOLDOWN)
     assert len(result.errors) == 1
     assert len(prs.api.prs) == 1

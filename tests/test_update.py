@@ -1,9 +1,11 @@
 import io
+import subprocess
 import sys
 import tomllib
 from contextlib import redirect_stderr
 from datetime import timedelta
 from email.message import Message
+from http.client import IncompleteRead
 from pathlib import Path
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
@@ -159,19 +161,26 @@ def test_highest_eligible_version_not_highest_tag(updater: Updater):
     assert any("v2.0.0 cooling down" in message for message in result.messages)
 
 
-def test_all_pages_are_scanned_without_order_assumptions(updater: Updater):
+def test_all_tags_are_scanned_in_one_git_advertisement_without_order_assumptions(
+    updater: Updater,
+):
     updater.api.upstreams["upstream/example"] = (
-        {"v1.9.0": A} | {f"unrelated-{i}": A for i in range(99)} | {"v1.10.0": B}
+        {"v1.9.0": A} | {f"unrelated-{i}": A for i in range(999)} | {"v1.10.0": B}
     )
     updater.observe()
+    updater.api.calls.clear()
+    updater.api.git_calls.clear()
     assert (
         updater.proposal(updater.run_update(NOW + COOLDOWN, dry_run=True)).tag
         == "v1.10.0"
     )
-    assert any(("page=2" in path for _, path, _ in updater.api.calls))
+    assert updater.api.git_calls == [("upstream/example", "")]
+    assert not any("page=" in path for _, path, _ in updater.api.calls)
 
 
-def test_failed_page_preserves_observations_and_continues_other_repos(updater: Updater):
+def test_failed_discovery_preserves_observations_and_continues_other_repos(
+    updater: Updater,
+):
     definition(updater.root, "other", "upstream/other")
     updater.api.upstreams["upstream/other"] = {"v1.9.0": A, "v1.10.0": B}
     updater.observe()
@@ -179,13 +188,157 @@ def test_failed_page_preserves_observations_and_continues_other_repos(updater: U
     updater.api.upstreams["upstream/example"] = {"v1.9.0": A} | {
         f"unrelated-{i}": A for i in range(100)
     }
-    updater.api.failures.append(
-        ("GET", "/repos/upstream/example/tags?per_page=100&page=2", "before")
-    )
+    updater.api.failures.append(("git ls-remote", "upstream/example", "before"))
     result = updater.run_update(NOW + COOLDOWN)
     assert updater.path.read_bytes() == before
     assert [d.name for d in result.discoveries if d.proposal] == ["other"]
     assert len(result.errors) == 1
+
+
+def test_annotated_tags_use_advertised_peeled_commits(updater: Updater):
+    for tag in ("v1.0.0", "v99.0.0-rc.1", "unrelated/v99.0.0"):
+        updater.api.upstreams["upstream/example"][tag] = C
+        updater.api.annotated["upstream/example", tag] = A
+    updater.api.annotated["upstream/example", "v2.0.0"] = D
+    updater.api.tag_objects[D] = {"type": "tag", "sha": B}
+    updater.api.tag_objects[B] = {"type": "commit", "sha": C}
+    updater.observe()
+    assert set(updater.observations()) == {"v1.10.0", "v2.0.0"}
+    assert updater.observations()["v2.0.0"].commit == C
+    assert [path for _, path, _ in updater.api.calls] == [
+        "/repos/upstream/example/git/ref/tags/v1.9.0",
+    ]
+    assert updater.proposal(updater.run_update(NOW + COOLDOWN)).commit == C
+
+
+@pytest.mark.parametrize(
+    "prefixes, common_prefix",
+    [
+        (("project/a/", "project/b/"), "project/"),
+        (("project/a/", "other/"), ""),
+        (("", "other/"), ""),
+    ],
+)
+def test_tools_sharing_a_repository_share_discovery(
+    updater: Updater, prefixes, common_prefix
+):
+    paths = (updater.path, definition(updater.root, "other"))
+    updater.api.upstreams["upstream/example"] = {}
+    for path, prefix in zip(paths, prefixes, strict=True):
+        path.write_text(
+            path.read_text()
+            .replace('tag = "v1.9.0"', f'tag = "{prefix}v1.9.0"')
+            .replace("github = true", f'github = true\ntag-prefix = "{prefix}"')
+        )
+        updater.api.upstreams["upstream/example"].update(
+            {f"{prefix}v1.9.0": A, f"{prefix}v2.0.0": C}
+        )
+    result = updater.run_update()
+    assert not result.errors
+    assert len(result.discoveries) == 2
+    for discovery, prefix in zip(result.discoveries, prefixes, strict=True):
+        assert set(discovery.observed) == {f"{prefix}v2.0.0"}
+    assert updater.api.git_calls == [("upstream/example", common_prefix)]
+    result = updater.run_update(NOW + COOLDOWN)
+    assert not result.errors
+    assert all(
+        d.proposal is not None and d.proposal.commit == C for d in result.discoveries
+    )
+
+
+@pytest.mark.parametrize(
+    "output",
+    [
+        "invalid output",
+        "bad-sha\trefs/tags/v2.0.0\n",
+        f"{C}\trefs/heads/main\n",
+        f"{C}\trefs/tags/v2.0.0^{{}}\n",
+        f"{C}\trefs/tags/v2.0.0\n{D}\trefs/tags/v2.0.0\n",
+    ],
+)
+def test_invalid_git_advertisements_preserve_observations(updater: Updater, output):
+    updater.observe()
+    before = updater.path.read_bytes()
+    with patch.object(updater.api, "_ls_remote", return_value=output):
+        result = updater.run_update(NOW + COOLDOWN)
+    assert result.errors
+    assert not result.discoveries
+    assert updater.path.read_bytes() == before
+
+
+def test_peeled_ids_can_precede_raw_tag_refs():
+    api = GitHub(token="unused-test-token")
+    output = (
+        f"{C}\trefs/tags/v2.0.0^{{}}\n{A}\trefs/tags/v1.9.0\n{B}\trefs/tags/v2.0.0\n"
+    )
+    with (
+        patch.object(api, "_ls_remote", return_value=output),
+        patch.object(api, "request", side_effect=AssertionError("No API reads needed")),
+    ):
+        assert api.tags("upstream/example") == {"v1.9.0": A, "v2.0.0": C}
+
+
+@pytest.mark.parametrize("token", [None, "unused-test-token"])
+def test_git_discovery_is_bounded_and_credentials_stay_out_of_argv(monkeypatch, token):
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    api = GitHub(token=token)
+    response = subprocess.CompletedProcess(
+        ["git"], 0, stdout=f"{C}\trefs/tags/project/v2.0.0\n", stderr=""
+    )
+    with patch(
+        "astral_dev_toolchain._github.subprocess.run", return_value=response
+    ) as run:
+        assert api.tags("upstream/example", "project/") == {"project/v2.0.0": C}
+    command = run.call_args.args[0]
+    assert command[-4:] == [
+        "ls-remote",
+        "--tags",
+        "https://github.com/upstream/example.git",
+        "refs/tags/project/*",
+    ]
+    assert run.call_args.kwargs["timeout"] == 30
+    assert run.call_args.kwargs["check"]
+    env = run.call_args.kwargs["env"]
+    assert env["GIT_TERMINAL_PROMPT"] == "0"
+    if token:
+        assert all(token not in arg for arg in command)
+        assert env["ASTRAL_DEV_TOOLCHAIN_GIT_AUTHORIZATION"].startswith(
+            "Authorization: Basic "
+        )
+    else:
+        assert not any("extraheader" in arg for arg in command)
+
+
+@pytest.mark.parametrize(
+    "error, message",
+    [
+        (subprocess.TimeoutExpired(["git"], 30), "timed out after 30 seconds"),
+        (
+            subprocess.CalledProcessError(128, ["git"], stderr="connection failed"),
+            "connection failed",
+        ),
+        (FileNotFoundError("git"), "cannot run git ls-remote"),
+    ],
+)
+def test_git_failures_are_reported(error, message):
+    api = GitHub(token="unused-test-token")
+    with (
+        patch("astral_dev_toolchain._github.subprocess.run", side_effect=error),
+        pytest.raises(GitHubError, match=message) as failure,
+    ):
+        api.tags("upstream/example")
+    assert failure.value.__cause__ is error
+
+
+def test_candidate_target_must_still_be_a_commit(updater: Updater):
+    updater.api.annotated["upstream/example", "v2.0.0"] = D
+    updater.api.tag_objects[D] = {"type": "tree", "sha": C}
+    updater.observe()
+    result = updater.run_update(NOW + COOLDOWN)
+    assert any("does not resolve to a commit" in error for error in result.errors)
+    assert not any(d.proposal for d in result.discoveries)
+    assert Tool.load(updater.path).source.commit == A
 
 
 def test_moved_deleted_and_reappearing_candidates_restart_cooldown(updater: Updater):
@@ -399,6 +552,23 @@ def test_cli_update_needs_no_state_file_or_docker(updater: Updater):
     assert updater.path.read_bytes() == before
 
 
+def test_cli_update_interrupt_exits_without_a_traceback(updater: Updater):
+    argv = [
+        "astral-dev-toolchain",
+        "--toolchain-dir",
+        str(updater.root / "toolchain"),
+        "update",
+        "--dry-run",
+    ]
+    with (
+        patch.object(sys, "argv", argv),
+        patch("astral_dev_toolchain._cli.update_local", side_effect=KeyboardInterrupt),
+        pytest.raises(SystemExit) as failure,
+    ):
+        _cli.run()
+    assert failure.value.code == 130
+
+
 @pytest.mark.parametrize("method, attempts", (("GET", 3), ("POST", 1)))
 def test_retries_gets_with_timeout_and_never_retries_writes(method, attempts):
     api = GitHub(token="unused-test-token")
@@ -410,6 +580,44 @@ def test_retries_gets_with_timeout_and_never_retries_writes(method, attempts):
         api.request(method, "/repos/o/r/tags")
     assert opening.call_count == attempts
     assert opening.call_args.kwargs["timeout"] == 30
+
+
+@pytest.mark.parametrize("method, attempts", [("GET", 3), ("POST", 1)])
+@pytest.mark.parametrize("error", [TimeoutError("timed out"), IncompleteRead(b"[", 10)])
+def test_response_read_failures_are_bounded_and_close_the_response(
+    method, attempts, error
+):
+    api = GitHub(token="unused-test-token")
+    with (
+        patch.object(api.opener, "open") as opening,
+        patch("astral_dev_toolchain._github.time.sleep"),
+        pytest.raises(GitHubError) as failure,
+    ):
+        opening.return_value.__enter__.return_value.read.side_effect = error
+        api.request(method, "/repos/o/r/tags")
+    assert failure.value.__cause__ is error
+    assert opening.call_count == attempts
+    assert opening.return_value.__exit__.call_count == attempts
+
+
+@pytest.mark.parametrize("token", [None, "unused-test-token"])
+def test_exhausted_rate_limit_explains_authentication(monkeypatch, token):
+    monkeypatch.delenv("GH_TOKEN", raising=False)
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    api = GitHub(token=token)
+    headers = Message()
+    headers["X-RateLimit-Remaining"] = "0"
+    error = HTTPError(
+        "https://api.github.com/repos/o/r", 403, "Forbidden", headers, None
+    )
+    with (
+        patch.object(api.opener, "open", side_effect=error) as opening,
+        pytest.raises(GitHubError, match="API rate limit exhausted") as failure,
+    ):
+        api.request("GET", "/repos/o/r")
+    assert failure.value.status == 403
+    assert ("set GH_TOKEN" in str(failure.value)) == (token is None)
+    opening.assert_called_once()
 
 
 def test_server_error_then_success():

@@ -71,6 +71,7 @@ class MemoryGitHub(GitHub):
         self.annotated: dict[tuple[str, str], str] = {}
         self.tag_objects: dict[str, dict[str, str]] = {}
         self.calls: list[tuple[str, str, Any]] = []
+        self.git_calls: list[tuple[str, str]] = []
         self.failures: list[tuple[str, str, str]] = []
         self.repo = "astral-sh/test-toolchain"
         self.refs: dict[str, str] = {}
@@ -156,18 +157,26 @@ class MemoryGitHub(GitHub):
         self.failure(method, endpoint, "after")
         return copy.deepcopy(result)
 
+    def _ls_remote(self, repo: str, prefix: str) -> str:
+        self.git_calls.append((repo, prefix))
+        self.failure("git ls-remote", repo, "before")
+        lines = []
+        for tag, commit in self.upstreams[repo].items():
+            if not tag.startswith(prefix):
+                continue
+            annotation = self.annotated.get((repo, tag))
+            lines.append(f"{annotation or commit}\trefs/tags/{tag}")
+            if annotation:
+                lines.append(f"{commit}\trefs/tags/{tag}^{{}}")
+        self.failure("git ls-remote", repo, "after")
+        return "\n".join(lines)
+
     def respond(self, method: str, endpoint: str, data: Any) -> Any:
         parsed = urlsplit(endpoint)
         path = unquote(parsed.path)
         query = parse_qs(parsed.query)
         for repo, tags in self.upstreams.items():
             prefix = f"/repos/{repo}"
-            if method == "GET" and path == f"{prefix}/tags":
-                page = int(query["page"][0])
-                return [
-                    {"name": name, "commit": {"sha": sha}}
-                    for name, sha in list(tags.items())[(page - 1) * 100 : page * 100]
-                ]
             if method == "GET" and path.startswith(f"{prefix}/git/ref/tags/"):
                 tag = path.removeprefix(f"{prefix}/git/ref/tags/")
                 if tag not in tags:
