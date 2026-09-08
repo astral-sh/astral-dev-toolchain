@@ -1,0 +1,17 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "release-plz"
+
+[source]
+repo = "https://github.com/release-plz/release-plz"
+tag = "release-plz-v0.3.162"
+commit = "ad7509365cfed6a13357b4c8b7d7770796b20823"
+
+[ci]
+shard = true
+
+[[test]]
+name = "help"
+run = ["release-plz", "--help"]
