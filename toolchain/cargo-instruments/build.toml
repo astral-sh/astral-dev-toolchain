@@ -7,6 +7,12 @@ name = "cargo-instruments"
 # curl-sys's Clang runtime lookup when cross-compiling with Zig.
 features = ["cargo/all-static"]
 
+[tool.env]
+# Zig emits duplicate libiconv load commands that macOS rejects at startup.
+# Strip unused dylibs while preserving the bootstrap image's SDK search paths.
+CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS = "-C link-arg=-F/app/macos-sdk/System/Library/Frameworks -C link-arg=-L/app/macos-sdk/usr/lib -C link-arg=-Wl,-dead_strip_dylibs"
+CARGO_TARGET_X86_64_APPLE_DARWIN_RUSTFLAGS = "-C link-arg=-F/app/macos-sdk/System/Library/Frameworks -C link-arg=-L/app/macos-sdk/usr/lib -C link-arg=-Wl,-dead_strip_dylibs"
+
 [source]
 repo = "https://github.com/cmyr/cargo-instruments"
 tag = "v0.4.16"
