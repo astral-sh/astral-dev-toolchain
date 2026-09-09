@@ -1,0 +1,37 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "cargo-instruments"
+# Vendor OpenSSL and libgit2, and use macOS's system libcurl to avoid
+# curl-sys's Clang runtime lookup when cross-compiling with Zig.
+features = ["cargo/all-static"]
+
+[tool.env]
+# Zig emits duplicate libiconv load commands that macOS rejects at startup.
+# Strip unused dylibs while preserving the bootstrap image's SDK search paths.
+# See: https://github.com/rust-cross/cargo-zigbuild/pull/464
+CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS = "-C link-arg=-F/app/macos-sdk/System/Library/Frameworks -C link-arg=-L/app/macos-sdk/usr/lib -C link-arg=-Wl,-dead_strip_dylibs"
+CARGO_TARGET_X86_64_APPLE_DARWIN_RUSTFLAGS = "-C link-arg=-F/app/macos-sdk/System/Library/Frameworks -C link-arg=-L/app/macos-sdk/usr/lib -C link-arg=-Wl,-dead_strip_dylibs"
+
+[source]
+repo = "https://github.com/cmyr/cargo-instruments"
+tag = "v0.4.16"
+commit = "67d4861a73e707a59a134d9c2fd2a9d0c021f4ea"
+
+[ci]
+shard = true
+# cargo-instruments requires macOS and Xcode Instruments.
+exclude-targets = [
+    "aarch64-unknown-linux-gnu",
+    "x86_64-unknown-linux-gnu",
+    "aarch64-pc-windows-msvc",
+    "x86_64-pc-windows-msvc",
+]
+
+[[test]]
+name = "help"
+run = ["cargo-instruments", "instruments", "--help"]
+
+[update]
+enabled = true
