@@ -1,0 +1,35 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "flamegraph"
+
+[tool.env]
+# ring selects clang on Windows ARM64, but cargo-xwin supplies clang-cl flags.
+# https://github.com/briansmith/ring/blob/2723abbca9e83347d82b056d5b239c6604f786df/build.rs#L562-L565
+# Fixed upstream after ring 0.17.14:
+# https://github.com/briansmith/ring/commit/e6aa4029690009a248a292d8a7f35602da5a2882
+# Remove this override once flamegraph uses a ring release containing that fix.
+# Keep cl argument syntax and the existing SDK/CRT. The hyphenated target is
+# intentional: cargo-xwin overwrites the underscored CFLAGS variant.
+"CFLAGS_aarch64-pc-windows-msvc" = "--driver-mode=cl"
+
+[source]
+repo = "https://github.com/flamegraph-rs/flamegraph"
+tag = "v0.6.14"
+commit = "ae6a7f3b37c39743e64b75f53bc2bf6eb898342f"
+
+[ci]
+shard = true
+
+[[test]]
+name = "bare-help"
+run = ["flamegraph", "--help"]
+
+[[test]]
+name = "cargo-flamegraph-help"
+run = ["cargo-flamegraph", "--help"]
+
+
+[update]
+enabled = true
