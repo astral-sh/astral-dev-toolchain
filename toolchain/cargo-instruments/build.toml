@@ -3,8 +3,9 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-instruments"
-# Build OpenSSL from source when cross-compiling the macOS wheels.
-features = ["vendored-openssl"]
+# Vendor OpenSSL and libgit2, and use macOS's system libcurl to avoid
+# curl-sys's Clang runtime lookup when cross-compiling with Zig.
+features = ["cargo/all-static"]
 
 [source]
 repo = "https://github.com/cmyr/cargo-instruments"
