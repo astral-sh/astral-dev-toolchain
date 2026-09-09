@@ -1,0 +1,29 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "cargo-instruments"
+# Build OpenSSL from source when cross-compiling the macOS wheels.
+features = ["vendored-openssl"]
+
+[source]
+repo = "https://github.com/cmyr/cargo-instruments"
+tag = "v0.4.16"
+commit = "67d4861a73e707a59a134d9c2fd2a9d0c021f4ea"
+
+[ci]
+shard = true
+# cargo-instruments requires macOS and Xcode Instruments.
+exclude-targets = [
+    "aarch64-unknown-linux-gnu",
+    "x86_64-unknown-linux-gnu",
+    "aarch64-pc-windows-msvc",
+    "x86_64-pc-windows-msvc",
+]
+
+[[test]]
+name = "help"
+run = ["cargo-instruments", "instruments", "--help"]
+
+[update]
+enabled = true
