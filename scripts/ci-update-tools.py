@@ -25,6 +25,7 @@ from astral_dev_toolchain._update import (
 from packaging.version import Version
 
 BOT = "github-actions[bot]"
+_SUPERSEDED = "<!-- astral-dev-toolchain-superseded -->"
 _COMMIT = """
 mutation($input: CreateCommitOnBranchInput!) {
   createCommitOnBranch(input: $input) { commit { oid } }
@@ -95,6 +96,22 @@ class UpdateBranch:
     ignored: Version | None
     frozen: bool
 
+    def superseded_by(self, definition: Definition) -> bool:
+        if self.pr is None or self.definition is None:
+            return False
+        current, proposed = definition.tool, self.definition.tool
+        assert current.update is not None and proposed.update is not None
+        if (
+            current.source.repo != proposed.source.repo
+            or current.update.tag_prefix != proposed.update.tag_prefix
+        ):
+            return True
+        current_version = tag_version(current.source.tag, current.update.tag_prefix)
+        proposed_version = tag_version(proposed.source.tag, proposed.update.tag_prefix)
+        if current_version is None or proposed_version is None:
+            raise ValueError("cannot reconcile a PR with a non-stable pin")
+        return current_version >= proposed_version
+
 
 @dataclass
 class PullRequests:
@@ -121,6 +138,8 @@ class PullRequests:
     def closed_version(
         self, pr: dict[str, Any], definition: Definition
     ) -> Version | None:
+        if _SUPERSEDED in (pr.get("body") or ""):
+            return None
         marker = re.search(
             r"<!-- astral-dev-toolchain-update: (.*?) -->", pr.get("body") or ""
         )
@@ -237,11 +256,31 @@ class PullRequests:
         current = gh_api("GET", f"/repos/{self.repo}/pulls/{branch.pr['number']}")
         return not self.handed_off(current, branch.head)
 
-    def save(self, discovery: Discovery, branch: UpdateBranch, content: str) -> None:
+    def check_base_head(self) -> None:
         if ref_head(self.repo, self.base_branch) != self.base_head:
             raise ValueError(
                 "default branch changed during the run; retry against its new head"
             )
+
+    def close_superseded(self, discovery: Discovery, branch: UpdateBranch) -> str:
+        assert branch.pr is not None
+        self.check_base_head()
+        pr = branch.pr
+        body = (
+            f"{pr.get('body') or ''}\n\n"
+            f"Superseded by `{discovery.definition.tool.source.tag}` on `{self.base_branch}`.\n\n"
+            f"{_SUPERSEDED}\n"
+        )
+        gh_api(
+            "PATCH",
+            f"/repos/{self.repo}/pulls/{pr['number']}",
+            data={"state": "closed", "body": body},
+        )
+        branch.pr = None
+        return f"{discovery.name}: closed superseded draft PR #{pr['number']}"
+
+    def save(self, discovery: Discovery, branch: UpdateBranch, content: str) -> None:
+        self.check_base_head()
         name = branch_name(discovery.name)
         if branch.head is None:
             gh_api(
@@ -300,7 +339,7 @@ class PullRequests:
             f"Upstream repository: `{discovery.repo}`.\n\n"
             "Mark this PR **ready for review** to start CI, including tool builds and smoke tests. "
             "The updater refreshes untouched drafts and stops after review begins or a human pushes commits. "
-            "Closing without merging suppresses this version and older versions.\n\n"
+            "Manually closing without merging suppresses this version and older versions.\n\n"
             f"<!-- astral-dev-toolchain-update: {marker} -->\n"
         )
         if branch.pr is None:
@@ -374,6 +413,7 @@ def run_updates(
     for discovery in result.discoveries:
         branch = branches[discovery.name]
         try:
+            superseded = branch.superseded_by(discovery.definition)
             proposal = discovery.proposal
             if (
                 proposal
@@ -388,6 +428,7 @@ def run_updates(
                 discovery.proposal is not None
                 and branch.pr is not None
                 and branch.definition is not None
+                and not superseded
             ):
                 assert discovery.definition.tool.update is not None
                 current = tag_version(
@@ -408,7 +449,9 @@ def run_updates(
                 result.errors.append(f"{discovery.name}: {error}")
             keep = (
                 branch.definition
-                if branch.pr is not None and discovery.proposal is None
+                if branch.pr is not None
+                and discovery.proposal is None
+                and not superseded
                 else None
             )
             content = discovery.render(keep=keep)
@@ -418,6 +461,11 @@ def run_updates(
                 else discovery.definition.text
             )
             if dry_run:
+                if superseded:
+                    assert branch.pr is not None
+                    result.messages.append(
+                        f"{discovery.name}: would close superseded draft PR #{branch.pr['number']}"
+                    )
                 if discovery.proposal:
                     result.messages.append(
                         f"{discovery.name}: would propose {discovery.proposal.version}"
@@ -432,6 +480,8 @@ def run_updates(
                     f"{discovery.name}: PR changed; waiting for reconciliation"
                 )
                 continue
+            if superseded:
+                result.messages.append(manager.close_superseded(discovery, branch))
             if content != old:
                 manager.save(discovery, branch, content)
                 result.messages.append(
