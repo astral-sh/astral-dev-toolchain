@@ -14,7 +14,8 @@ shard = true
 
 [[test]]
 name = "help"
-run = ["cargo-bloat", "--help"]
+# Expects to be run via `cargo bloat`, not `cargo-bloat`.
+run = ["cargo", "bloat", "--help"]
 
 [update]
 enabled = true
