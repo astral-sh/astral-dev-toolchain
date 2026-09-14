@@ -5,7 +5,8 @@ description = "Build-time bootstrapper for the Astral development toolchain imag
 authors = [{ name = "William Woodruff", email = "william@yossarian.net" }]
 requires-python = ">=3.14"
 dependencies = [
-    "cargo-xwin>=0.23.1",
+    "astral-dev-toolchain-cargo-xwin>=0.23.1",
+    "ninja>=1.13.0",
     "pydantic>=2.13.4",
     "rustup>=1.29.0.1",
 ]
