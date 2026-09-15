@@ -1,0 +1,20 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "cargo-deny"
+
+[source]
+repo = "https://github.com/EmbarkStudios/cargo-deny"
+tag = "0.20.2"
+commit = "bca0dde53651ee946720e4540b5ce2610bec8f06"
+
+[ci]
+shard = true
+
+[[test]]
+name = "help"
+run = ["cargo-deny", "--help"]
+
+[update]
+enabled = true
