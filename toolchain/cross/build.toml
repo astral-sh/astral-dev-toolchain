@@ -1,0 +1,20 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "cross"
+
+[source]
+repo = "https://github.com/cross-rs/cross"
+tag = "v0.2.5"
+commit = "88f49ff79e777bef6d3564531636ee4d3cc2f8d2"
+
+[ci]
+shard = true
+
+[[test]]
+name = "help"
+run = ["cross", "--help"]
+
+[update]
+enabled = true
