@@ -52,9 +52,16 @@ def main() -> None:
         selected = list(by_name)
     else:
         if event_name == "pull_request":
-            base = event["pull_request"]["base"]["sha"]
-            head = event["pull_request"]["head"]["sha"]
-            revision_range = f"{base}...{head}"
+            pull_request = event["pull_request"]
+            if event["action"] == "closed" and pull_request["merged"]:
+                # Publish workflows run after a squash merge, when the original
+                # pull request head may no longer be available locally.
+                merge_commit = pull_request["merge_commit_sha"]
+                revision_range = f"{merge_commit}^..{merge_commit}"
+            else:
+                base = pull_request["base"]["sha"]
+                head = pull_request["head"]["sha"]
+                revision_range = f"{base}...{head}"
         else:
             revision_range = f"{event['before']}..{event['after']}"
 
