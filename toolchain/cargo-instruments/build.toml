@@ -35,3 +35,7 @@ run = ["cargo-instruments", "instruments", "--help"]
 
 [update]
 enabled = true
+
+[update.observed."v0.4.17"]
+commit = "d20d2c92866e91c5683a152e104f77465b9dd35d"
+first-seen = 2026-09-17T20:06:39.679184Z
