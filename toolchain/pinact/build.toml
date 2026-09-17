@@ -22,3 +22,7 @@ run = ["pinact", "--help"]
 
 [update]
 enabled = true
+
+[update.observed."v5.0.0"]
+commit = "a4f45e095b184794ac1f82b6b07cc35b0b8cfe7b"
+first-seen = 2026-09-17T20:06:45.200909Z
