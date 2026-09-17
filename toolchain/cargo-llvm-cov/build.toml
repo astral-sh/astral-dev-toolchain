@@ -6,8 +6,8 @@ name = "cargo-llvm-cov"
 
 [source]
 repo = "https://github.com/taiki-e/cargo-llvm-cov"
-tag = "v0.9.0"
-commit = "be59056988acd54c7f984b7c85643daea3711b29"
+tag = "v0.9.1"
+commit = "0dc905679ae6b4740b186f6e2c2ef1ab78fb76d7"
 
 [[test]]
 name = "help"
