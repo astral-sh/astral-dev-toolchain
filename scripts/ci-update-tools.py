@@ -301,7 +301,7 @@ class PullRequests:
                     "input": {
                         "branch": {
                             "repositoryNameWithOwner": self.repo,
-                            "refName": name,
+                            "branchName": name,
                         },
                         "expectedHeadOid": branch.head,
                         "message": {"headline": f"toolchain: update {discovery.name}"},
