@@ -338,6 +338,7 @@ class PullRequests:
             f"Eligible after seven days: {proposal.eligible_at.isoformat()}\n\n"
             f"Upstream repository: `{discovery.repo}`.\n\n"
             "Mark this PR **ready for review** to start CI, including tool builds and smoke tests. "
+            "Apply the `publish-after-merge` label before merging to publish the updated tool automatically. "
             "The updater refreshes untouched drafts and stops after review begins or a human pushes commits. "
             "Manually closing without merging suppresses this version and older versions.\n\n"
             f"<!-- astral-dev-toolchain-update: {marker} -->\n"
