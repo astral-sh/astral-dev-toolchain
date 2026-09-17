@@ -17,3 +17,7 @@ exitcode = 1
 
 [update]
 enabled = true
+
+[update.observed."v5.0.2"]
+commit = "832f2526fe98fe32251964199e7279f620252a5b"
+first-seen = 2026-09-17T20:06:36.073453Z
