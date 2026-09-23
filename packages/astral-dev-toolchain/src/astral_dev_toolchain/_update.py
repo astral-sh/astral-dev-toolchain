@@ -97,16 +97,16 @@ class Discovery:
     def name(self) -> str:
         return self.definition.tool.tool.name
 
-    def render(self, *, keep: Definition | None = None) -> str:
-        """Apply a proposal, or keep an existing draft's pin while observing tags."""
-        base = keep or self.definition
+    def render(self) -> str:
+        """Apply a proposal and record observations."""
+        base = self.definition
         document = tomlkit.parse(base.text)
         update = document["update"]
         assert isinstance(update, (Table, InlineTable))
         assert base.tool.update is not None
         floor = (
             self.proposal.version
-            if self.proposal is not None and keep is None
+            if self.proposal is not None
             else tag_version(base.tool.source.tag, base.tool.update.tag_prefix)
         )
         observed = {
@@ -124,7 +124,7 @@ class Discovery:
                 }
             else:
                 update.pop("observed", None)
-        if self.proposal is not None and keep is None:
+        if self.proposal is not None:
             proposal = self.proposal
             explicit = base.tool.tool.version
             if explicit is not None and Version(explicit) != proposal.old_version:
