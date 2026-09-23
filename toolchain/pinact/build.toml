@@ -13,6 +13,9 @@ repo = "https://github.com/suzuki-shunsuke/pinact"
 tag = "v4.1.1"
 commit = "b1a554a82ef4f55533237e49c19a24ddf0045100"
 
+[ci]
+shard = true
+
 [[test]]
 name = "help"
 run = ["pinact", "--help"]
