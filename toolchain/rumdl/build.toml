@@ -1,0 +1,20 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "rumdl"
+
+[source]
+repo = "https://github.com/rvben/rumdl"
+tag = "v0.2.71"
+commit = "ce956117a6d7135bd9f3101d3df276a4f88bad04"
+
+[ci]
+shard = true
+
+[[test]]
+name = "help"
+run = ["rumdl", "--help"]
+
+[update]
+enabled = true
