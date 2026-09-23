@@ -88,8 +88,19 @@ def main() -> None:
     targets = _target_matrix()
     known_targets = {target["target"] for target in targets}
     matrix = []
+    summary = ["## Selected tools", ""]
+    if tools:
+        summary.extend(
+            [
+                "| Tool | Source tag | Targets | Expected PyPI project |",
+                "| --- | --- | --- | --- |",
+            ]
+        )
+    else:
+        summary.append("No tools selected.")
     for tool in tools:
-        ci = by_name[tool].ci
+        definition = by_name[tool]
+        ci = definition.ci
         excluded_targets = set(ci.exclude_targets)
         unknown_targets = sorted(excluded_targets - known_targets)
         if unknown_targets:
@@ -110,12 +121,22 @@ def main() -> None:
                 "targets": json.dumps(tool_targets),
             }
         )
+        package = definition.python_package_name
+        target_names = "<br>".join(f"`{target['target']}`" for target in tool_targets)
+        summary.append(
+            f"| `{tool}` | `{definition.source.tag}` | {target_names} | "
+            f"[{package}](https://pypi.org/project/{package}/) |"
+        )
 
     print(f"Selected tools: {', '.join(tools) or '(none)'}")
     with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
         print(f"tools={json.dumps(tools)}", file=output)
         print(f"matrix={json.dumps(matrix)}", file=output)
         print(f"targets={json.dumps(targets)}", file=output)
+
+    if path := os.environ.get("GITHUB_STEP_SUMMARY"):
+        with Path(path).open("a", encoding="utf-8") as output:
+            print("\n".join(summary), file=output)
 
 
 if __name__ == "__main__":
