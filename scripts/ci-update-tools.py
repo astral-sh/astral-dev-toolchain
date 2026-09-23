@@ -1,4 +1,4 @@
-"""Keep update observations in per-tool branches and open eligible draft PRs."""
+"""Keep update observations in per-tool branches and open eligible PRs."""
 
 import argparse
 import base64
@@ -25,6 +25,7 @@ from astral_dev_toolchain._update import (
 from packaging.version import Version
 
 BOT = "github-actions[bot]"
+# Historical bot-closed PRs must not be counted as rejected updates.
 _SUPERSEDED = "<!-- astral-dev-toolchain-superseded -->"
 _COMMIT = """
 mutation($input: CreateCommitOnBranchInput!) {
@@ -92,25 +93,8 @@ def ref_head(repo: str, branch: str) -> str | None:
 class UpdateBranch:
     head: str | None
     definition: Definition | None
-    pr: dict[str, Any] | None
     ignored: Version | None
     frozen: bool
-
-    def superseded_by(self, definition: Definition) -> bool:
-        if self.pr is None or self.definition is None:
-            return False
-        current, proposed = definition.tool, self.definition.tool
-        assert current.update is not None and proposed.update is not None
-        if (
-            current.source.repo != proposed.source.repo
-            or current.update.tag_prefix != proposed.update.tag_prefix
-        ):
-            return True
-        current_version = tag_version(current.source.tag, current.update.tag_prefix)
-        proposed_version = tag_version(proposed.source.tag, proposed.update.tag_prefix)
-        if current_version is None or proposed_version is None:
-            raise ValueError("cannot reconcile a PR with a non-stable pin")
-        return current_version >= proposed_version
 
 
 @dataclass
@@ -159,19 +143,6 @@ class PullRequests:
         assert definition.tool.update is not None
         return tag_version(closed.tool.source.tag, definition.tool.update.tag_prefix)
 
-    def handed_off(self, pr: dict[str, Any], head: str | None) -> bool:
-        if (
-            pr["state"] != "open"
-            or not pr["draft"]
-            or pr["user"]["login"] != BOT
-            or pr["head"]["sha"] != head
-        ):
-            return True
-        return any(
-            event["event"] == "ready_for_review"
-            for event in gh_pages(f"/repos/{self.repo}/issues/{pr['number']}/timeline")
-        )
-
     def load(self, definition: Definition) -> UpdateBranch:
         name = definition.tool.tool.name
         branch = branch_name(name)
@@ -196,7 +167,8 @@ class PullRequests:
         opened = [pr for pr in prs if pr["state"] == "open"]
         if len(opened) > 1:
             raise ValueError(f"{name}: multiple open update PRs")
-        pr = opened[0] if opened else None
+        if opened:
+            return UpdateBranch(head, None, None, frozen=True)
         rejected = [
             version
             for closed in prs
@@ -205,8 +177,8 @@ class PullRequests:
             and closed["user"]["login"] == BOT
             if (version := self.closed_version(closed, definition)) is not None
         ]
-        frozen = pr is not None and self.handed_off(pr, head)
-        if head is not None and not frozen:
+        frozen = False
+        if head is not None:
             commit = gh_api("GET", f"/repos/{self.repo}/commits/{head}")
             owned = (
                 (commit.get("author") or {}).get("login") == BOT
@@ -219,25 +191,24 @@ class PullRequests:
                 # A resolved PR may be reused; an interrupted first run may also
                 # have created a branch that still points into main's history.
                 resolved = False
-                if pr is None:
-                    path = definition.path.resolve().relative_to(self.root).as_posix()
-                    closed = next(
-                        (
-                            p
-                            for p in prs
-                            if p["state"] == "closed" and p["head"]["sha"] == head
-                        ),
-                        None,
-                    )
-                    if closed is not None:
-                        # Do not carry unrelated human changes into the next PR.
-                        resolved = all(
-                            change["filename"] == path
-                            for change in gh_pages(
-                                f"/repos/{self.repo}/pulls/{closed['number']}/files"
-                            )
+                path = definition.path.resolve().relative_to(self.root).as_posix()
+                closed = next(
+                    (
+                        p
+                        for p in prs
+                        if p["state"] == "closed" and p["head"]["sha"] == head
+                    ),
+                    None,
+                )
+                if closed is not None:
+                    # Do not carry unrelated human changes into the next PR.
+                    resolved = all(
+                        change["filename"] == path
+                        for change in gh_pages(
+                            f"/repos/{self.repo}/pulls/{closed['number']}/files"
                         )
-                if pr is None and not resolved:
+                    )
+                if not resolved:
                     comparison = gh_api(
                         "GET", f"/repos/{self.repo}/compare/{head}...{self.base_head}"
                     )
@@ -248,36 +219,13 @@ class PullRequests:
             if head is not None and not frozen
             else None
         )
-        return UpdateBranch(head, loaded, pr, max(rejected, default=None), frozen)
-
-    def writable(self, branch: UpdateBranch) -> bool:
-        if branch.pr is None:
-            return True
-        current = gh_api("GET", f"/repos/{self.repo}/pulls/{branch.pr['number']}")
-        return not self.handed_off(current, branch.head)
+        return UpdateBranch(head, loaded, max(rejected, default=None), frozen)
 
     def check_base_head(self) -> None:
         if ref_head(self.repo, self.base_branch) != self.base_head:
             raise ValueError(
                 "default branch changed during the run; retry against its new head"
             )
-
-    def close_superseded(self, discovery: Discovery, branch: UpdateBranch) -> str:
-        assert branch.pr is not None
-        self.check_base_head()
-        pr = branch.pr
-        body = (
-            f"{pr.get('body') or ''}\n\n"
-            f"Superseded by `{discovery.definition.tool.source.tag}` on `{self.base_branch}`.\n\n"
-            f"{_SUPERSEDED}\n"
-        )
-        gh_api(
-            "PATCH",
-            f"/repos/{self.repo}/pulls/{pr['number']}",
-            data={"state": "closed", "body": body},
-        )
-        branch.pr = None
-        return f"{discovery.name}: closed superseded draft PR #{pr['number']}"
 
     def save(self, discovery: Discovery, branch: UpdateBranch, content: str) -> None:
         self.check_base_head()
@@ -321,7 +269,7 @@ class PullRequests:
         )
         branch.head = response["data"]["createCommitOnBranch"]["commit"]["oid"]
 
-    def publish(self, discovery: Discovery, branch: UpdateBranch) -> str:
+    def publish(self, discovery: Discovery) -> str:
         proposal = discovery.proposal
         assert proposal is not None
         old = discovery.definition.tool.source
@@ -337,33 +285,24 @@ class PullRequests:
             f"First observed: {proposal.first_seen.isoformat()}  \n"
             f"Eligible after seven days: {proposal.eligible_at.isoformat()}\n\n"
             f"Upstream repository: `{discovery.repo}`.\n\n"
-            "Mark this PR **ready for review** to start CI, including tool builds and smoke tests. "
+            "Select **Approve workflows to run** in the merge box to start CI, including tool builds and smoke tests. "
             "Apply the `publish-after-merge` label before merging to publish the updated tool automatically. "
-            "The updater refreshes untouched drafts and stops after review begins or a human pushes commits. "
+            "The updater leaves this PR unchanged until it is merged or closed. "
             "Manually closing without merging suppresses this version and older versions.\n\n"
             f"<!-- astral-dev-toolchain-update: {marker} -->\n"
         )
-        if branch.pr is None:
-            created = gh_api(
-                "POST",
-                f"/repos/{self.repo}/pulls",
-                data={
-                    "title": title,
-                    "body": body,
-                    "head": branch_name(discovery.name),
-                    "base": self.base_branch,
-                    "draft": True,
-                },
-            )
-            return f"{discovery.name}: created draft PR #{created['number']}"
-        if branch.pr["title"] != title or branch.pr["body"] != body:
-            gh_api(
-                "PATCH",
-                f"/repos/{self.repo}/pulls/{branch.pr['number']}",
-                data={"title": title, "body": body},
-            )
-            return f"{discovery.name}: refreshed draft PR #{branch.pr['number']}"
-        return f"{discovery.name}: draft PR #{branch.pr['number']} already current"
+        created = gh_api(
+            "POST",
+            f"/repos/{self.repo}/pulls",
+            data={
+                "title": title,
+                "body": body,
+                "head": branch_name(discovery.name),
+                "base": self.base_branch,
+                "draft": False,
+            },
+        )
+        return f"{discovery.name}: created PR #{created['number']}"
 
 
 def run_updates(
@@ -391,7 +330,7 @@ def run_updates(
             branch = manager.load(definition)
             if branch.frozen:
                 result.messages.append(
-                    f"{name}: PR or branch frozen for human review or edits"
+                    f"{name}: open update PR or branch with human edits; skipping"
                 )
                 continue
             branches[name] = branch
@@ -414,7 +353,6 @@ def run_updates(
     for discovery in result.discoveries:
         branch = branches[discovery.name]
         try:
-            superseded = branch.superseded_by(discovery.definition)
             proposal = discovery.proposal
             if (
                 proposal
@@ -425,48 +363,18 @@ def run_updates(
                     f"{discovery.name}: {proposal.version} suppressed by a closed PR"
                 )
                 discovery.proposal = None
-            if (
-                discovery.proposal is not None
-                and branch.pr is not None
-                and branch.definition is not None
-                and not superseded
-            ):
-                assert discovery.definition.tool.update is not None
-                current = tag_version(
-                    branch.definition.tool.source.tag,
-                    discovery.definition.tool.update.tag_prefix,
-                )
-                if current is None:
-                    raise ValueError("open PR does not pin a stable version")
-                if discovery.proposal.version < current:
-                    result.messages.append(
-                        f"{discovery.name}: keeping newer open proposal {current}"
-                    )
-                    discovery.proposal = None
             try:
                 recheck(discovery, git, now)
             except (GitError, ValueError) as error:
                 discovery.proposal = None
                 result.errors.append(f"{discovery.name}: {error}")
-            keep = (
-                branch.definition
-                if branch.pr is not None
-                and discovery.proposal is None
-                and not superseded
-                else None
-            )
-            content = discovery.render(keep=keep)
+            content = discovery.render()
             old = (
                 branch.definition.text
                 if branch.definition
                 else discovery.definition.text
             )
             if dry_run:
-                if superseded:
-                    assert branch.pr is not None
-                    result.messages.append(
-                        f"{discovery.name}: would close superseded draft PR #{branch.pr['number']}"
-                    )
                 if discovery.proposal:
                     result.messages.append(
                         f"{discovery.name}: would propose {discovery.proposal.version}"
@@ -476,20 +384,13 @@ def run_updates(
                         f"{discovery.name}: would record observations in {branch_name(discovery.name)}"
                     )
                 continue
-            if not manager.writable(branch):
-                result.messages.append(
-                    f"{discovery.name}: PR changed; waiting for reconciliation"
-                )
-                continue
-            if superseded:
-                result.messages.append(manager.close_superseded(discovery, branch))
             if content != old:
                 manager.save(discovery, branch, content)
                 result.messages.append(
                     f"{discovery.name}: recorded build.toml on {branch_name(discovery.name)}"
                 )
-            if discovery.proposal is not None and manager.writable(branch):
-                result.messages.append(manager.publish(discovery, branch))
+            if discovery.proposal is not None:
+                result.messages.append(manager.publish(discovery))
         except (RuntimeError, ValueError) as error:
             result.errors.append(f"{discovery.name}: {error}")
     return result
