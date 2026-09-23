@@ -4,6 +4,7 @@ version = 1
 backend = "go"
 name = "pinact"
 version = "4.1.1"
+rebuild = 1
 directory = "cmd/pinact"
 version-var = "main.version"
 
@@ -11,6 +12,9 @@ version-var = "main.version"
 repo = "https://github.com/suzuki-shunsuke/pinact"
 tag = "v4.1.1"
 commit = "b1a554a82ef4f55533237e49c19a24ddf0045100"
+
+[ci]
+shard = true
 
 [[test]]
 name = "help"

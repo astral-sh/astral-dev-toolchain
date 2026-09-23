@@ -12,7 +12,7 @@ import tomlkit
 from astral_dev_toolchain_core import RustToolSpec, Tool
 from packaging.version import Version
 
-from ._metadata import readme_notice
+from ._metadata import prepare_readme
 from ._plan import Plan
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,7 @@ class RustBuilder:
         if self.tool.tool.rebuild:
             version = version.__replace__(post=self.tool.tool.rebuild)
 
-        readme = self._prepare_readme(package.readme, build_dir)
+        readme = prepare_readme(self.tool, package.readme, build_dir)
         pyproject = {
             "build-system": {
                 "requires": ["maturin>=1,<2"],
@@ -97,7 +97,7 @@ class RustBuilder:
                 "maintainers": [
                     {"name": "Astral", "email": "hey@astral.sh"},
                 ],
-                "readme": readme,
+                "readme": readme.name,
                 "dynamic": [
                     "description",
                     "keywords",
@@ -110,19 +110,6 @@ class RustBuilder:
         (build_dir / "pyproject.toml").write_text(
             tomlkit.dumps(pyproject), encoding="utf-8"
         )
-
-    def _prepare_readme(self, readme: Path, build_dir: Path) -> str:
-        if readme.suffix.lower() != ".md":
-            raise ValueError(
-                f"unsupported README format for {self.tool.tool.name}: {readme}"
-            )
-
-        notice = readme_notice(self.tool) + "\n---\n\n"
-        generated = build_dir / "README.md"
-        generated.write_text(
-            notice + readme.read_text(encoding="utf-8"), encoding="utf-8"
-        )
-        return generated.name
 
     def _manifest_metadata(self, src_dir: Path, manifest: Path) -> _CargoPackage:
         result = subprocess.run(

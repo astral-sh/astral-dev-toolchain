@@ -6,6 +6,9 @@ requires-python = ">=3.14"
 exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
 exclude-newer-span = "P7D"
 
+[options.exclude-newer-package]
+radlermass = "2026-09-24T00:00:00Z"
+
 [manifest]
 members = [
     "astral-dev-toolchain",
@@ -115,9 +118,9 @@ version = "0.1.0"
 source = { editable = "packages/astral-dev-toolchain-zygote" }
 dependencies = [
     { name = "astral-dev-toolchain-core" },
-    { name = "go-to-wheel" },
     { name = "maturin" },
     { name = "packaging" },
+    { name = "radlermass" },
     { name = "tomlkit" },
     { name = "ziglang" },
 ]
@@ -125,9 +128,9 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "astral-dev-toolchain-core", editable = "packages/astral-dev-toolchain-core" },
-    { name = "go-to-wheel", specifier = "==0.2" },
     { name = "maturin", specifier = ">=1.14.1" },
     { name = "packaging", specifier = ">=26.3" },
+    { name = "radlermass", specifier = ">=0.2.0" },
     { name = "tomlkit", specifier = ">=0.13.3" },
     { name = "ziglang", specifier = ">=0.16.0" },
 ]
@@ -139,15 +142,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d8/53/6f443c9a4a8358a93a6792e2acffb9d9d5cb0a5cfd8802644b7b1c9a02e4/colorama-0.4.6.tar.gz", hash = "sha256:08695f5cb7ed6e0531a20572697297273c47b8cae5a63ffc6d6ed5c201be6e44", size = 27697, upload-time = "2022-10-25T02:36:22.414Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl", hash = "sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6", size = 25335, upload-time = "2022-10-25T02:36:20.889Z" },
-]
-
-[[package]]
-name = "go-to-wheel"
-version = "0.2"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/7f/c2/c6e468bb65e549913094b40ad64eec4d750d8f47bb9d16184a7462c916b0/go_to_wheel-0.2.tar.gz", hash = "sha256:4c7d3906e1f48e759a3e297570ed9514d9948dd66feb351732e344347a0b9945", size = 17731, upload-time = "2026-02-04T04:28:04.546Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/da/5a/0cdd968c17240c24760ffb6b2ae6ea2b960ca404eeaa509bf3e1b98b23bf/go_to_wheel-0.2-py3-none-any.whl", hash = "sha256:efc6c9b8b1ea6074cc2679820b5b5d47197ef9172e1169fb332caab5ebbf62c0", size = 11964, upload-time = "2026-02-04T04:28:03.115Z" },
 ]
 
 [[package]]
@@ -303,6 +297,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e4/47/b9efed96c114afcfa3c9d3fe98a76a1d14c74a9e266d397cf6eb64be5e01/pytest-9.1.1.tar.gz", hash = "sha256:1088fbde8f2b49d95a549a195707afa7a76a3ce9bcadc26b6d71f0ffda5fe313", size = 1636369, upload-time = "2026-06-19T10:58:32.857Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/24/25/1de2678b631f5a49215c6c96fff41ba892b0a34df68d6d80292b1b48aa7f/pytest-9.1.1-py3-none-any.whl", hash = "sha256:37a86b45efb9a47a61a36449063e8e18d0cab3161329fc099eb21783169c4f0c", size = 386536, upload-time = "2026-06-19T10:58:31.347Z" },
+]
+
+[[package]]
+name = "radlermass"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/96/fc/ea669afe2d1b99ae8673ad30ee0e8c0d6d21d3a0e2e52ef005031027b8c1/radlermass-0.2.0.tar.gz", hash = "sha256:bfe3142b53d5601cb3663eb0f35ba6d0cdce026948811544c0c0968a5711a0dd", size = 12685, upload-time = "2026-09-23T20:30:13.911Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/2e/99/67ea2e4216fa736473caaa68ba87778815a78ec49f36a294a79a798d5635/radlermass-0.2.0-py3-none-any.whl", hash = "sha256:4eb049639f54794ed5a5b7c4592d3875917539aea78f6c059a74795c1817f758", size = 17248, upload-time = "2026-09-23T20:30:12.789Z" },
 ]
 
 [[package]]

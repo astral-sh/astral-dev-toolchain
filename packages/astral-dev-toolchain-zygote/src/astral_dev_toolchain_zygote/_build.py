@@ -26,8 +26,7 @@ class Builder:
             # |- builder/
             # | |
             # | |- pyproject.toml (generated for Rust builds)
-            # | |- README.md (generated for Rust builds)
-            # | |- <tool>[.exe] (compiled binary for Go builds)
+            # | |- README.md (generated for Rust and Go builds)
             # |
             # |- src/ (git clone contents)
             src_dir = Path(tempdir) / "src"
