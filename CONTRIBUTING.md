@@ -173,6 +173,9 @@ If you set `tool.backend = "go"`, the following backend options become available
 - `directory` overrides the repo-relative path to the source directory.
   By default this is `.`, but repos with a `cmd/...` or similar layout
   may need a custom path.
+- `readme` overrides the repo-relative path to the Markdown README.
+  By default this is `README.md`. The build prepends the same provenance
+  notice used for Rust tools.
 
 In addition, `version` is required when using the Go backend, since Go packages
 do not convey their own version.

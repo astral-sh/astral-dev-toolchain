@@ -143,6 +143,9 @@ class GoToolSpec(_ToolSpec):
     directory: StrictStr = "."
     """The Go executable's package directory, relative to the source checkout."""
 
+    readme: StrictStr = "README.md"
+    """The Markdown README, relative to the source checkout."""
+
     version_var: StrictStr | None = None
     """An optional Go string variable to set to tool.version using linker flags."""
 

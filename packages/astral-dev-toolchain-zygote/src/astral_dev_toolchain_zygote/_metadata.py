@@ -1,5 +1,7 @@
 """Package metadata shared across build backends."""
 
+from pathlib import Path
+
 from astral_dev_toolchain_core import Tool
 
 _README_NOTICE = """\
@@ -15,3 +17,15 @@ def readme_notice(tool: Tool) -> str:
         tag=tool.source.tag,
         commit=tool.source.commit,
     )
+
+
+def prepare_readme(tool: Tool, readme: Path, build_dir: Path) -> Path:
+    if readme.suffix.lower() != ".md":
+        raise ValueError(f"unsupported README format for {tool.tool.name}: {readme}")
+
+    generated = build_dir / "README.md"
+    generated.write_text(
+        readme_notice(tool) + "\n---\n\n" + readme.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    return generated

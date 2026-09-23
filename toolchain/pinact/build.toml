@@ -4,6 +4,7 @@ version = 1
 backend = "go"
 name = "pinact"
 version = "4.1.1"
+rebuild = 1
 directory = "cmd/pinact"
 version-var = "main.version"
 
