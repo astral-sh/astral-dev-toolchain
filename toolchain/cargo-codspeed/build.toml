@@ -7,8 +7,8 @@ manifest = "crates/cargo-codspeed/Cargo.toml"
 
 [source]
 repo = "https://github.com/CodSpeedHQ/codspeed-rust"
-tag = "v5.0.1"
-commit = "69f74b65cb10ddf68e381ccafdaa300c2e8969da"
+tag = "v5.0.2"
+commit = "832f2526fe98fe32251964199e7279f620252a5b"
 
 [[test]]
 name = "help"
