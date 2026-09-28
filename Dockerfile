@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 ARG UV_VERSION=0.12.5
-ARG GO_VERSION=1.26.6
+ARG GO_VERSION=1.27.1
 ARG UBUNTU_SNAPSHOT=20260127T200000Z
 ARG MACOSX_SDK_SHA=041600eda65c6a668f66cb7d56b7d1da3e8bcc93
 # Users can override this through the host CLI's --bootstrap-image option.
