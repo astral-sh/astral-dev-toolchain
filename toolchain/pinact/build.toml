@@ -3,15 +3,14 @@ version = 1
 [tool]
 backend = "go"
 name = "pinact"
-version = "4.1.1"
-rebuild = 1
+version = "5.0.0"
 directory = "cmd/pinact"
 version-var = "main.version"
 
 [source]
 repo = "https://github.com/suzuki-shunsuke/pinact"
-tag = "v4.1.1"
-commit = "b1a554a82ef4f55533237e49c19a24ddf0045100"
+tag = "v5.0.0"
+commit = "a4f45e095b184794ac1f82b6b07cc35b0b8cfe7b"
 
 [ci]
 shard = true
@@ -22,3 +21,7 @@ run = ["pinact", "--help"]
 
 [update]
 enabled = true
+
+[update.observed."v5.0.0"]
+commit = "a4f45e095b184794ac1f82b6b07cc35b0b8cfe7b"
+first-seen = 2026-09-17T20:06:45.200909Z
