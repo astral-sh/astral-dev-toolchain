@@ -11,8 +11,8 @@ no-default-features = true
 
 [source]
 repo = "https://github.com/nextest-rs/nextest"
-tag = "cargo-nextest-0.9.145"
-commit = "00af4550ec3b3b9f0e574b897b06acb95d325ba2"
+tag = "cargo-nextest-0.9.146"
+commit = "8af696ddcce8fff2962d6a5168b6d138b8616a35"
 
 [ci]
 shard = true
@@ -24,10 +24,6 @@ run = ["cargo-nextest", "--help"]
 [update]
 enabled = true
 tag-prefix = "cargo-nextest-"
-
-[update.observed."cargo-nextest-0.9.145"]
-commit = "00af4550ec3b3b9f0e574b897b06acb95d325ba2"
-first-seen = 2026-09-17T20:06:40.752590Z
 
 [update.observed."cargo-nextest-0.9.146"]
 commit = "8af696ddcce8fff2962d6a5168b6d138b8616a35"
