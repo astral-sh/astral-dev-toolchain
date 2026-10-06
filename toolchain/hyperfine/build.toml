@@ -15,3 +15,7 @@ run = ["hyperfine", "--help"]
 
 [update]
 enabled = true
+
+[update.observed."v1.21.0"]
+commit = "ad6b4e2b1ed87f9ca838b7eac057661748c7e680"
+first-seen = 2026-10-06T06:49:45.553662Z
