@@ -21,8 +21,8 @@ CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_RUSTFLAGS = "-C target-feature=+crt-static"
 
 [source]
 repo = "https://github.com/Boshen/cargo-shear"
-tag = "v1.13.5"
-commit = "a460545ae901b01e1a9543d95cca4c51a9ba51ab"
+tag = "v1.14.0"
+commit = "e789f424d9b780d207c06342c63ef95609389fd6"
 
 [[test]]
 name = "help"
@@ -30,10 +30,6 @@ run = ["cargo-shear", "--help"]
 
 [update]
 enabled = true
-
-[update.observed."v1.13.5"]
-commit = "a460545ae901b01e1a9543d95cca4c51a9ba51ab"
-first-seen = 2026-09-22T06:45:20.693497Z
 
 [update.observed."v1.14.0"]
 commit = "e789f424d9b780d207c06342c63ef95609389fd6"
