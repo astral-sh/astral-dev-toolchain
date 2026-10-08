@@ -4,7 +4,8 @@
     "astral-dev-toolchain": {
       "name": "astral-sh/astral-dev-toolchain",
       "id": 1341197863,
-      "oidc_subject": "legacy"
+      "oidc_subject": "immutable",
+      "owner_id": 115962839
     }
   },
   "rules": [
