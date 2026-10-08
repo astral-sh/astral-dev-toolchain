@@ -6,13 +6,12 @@ name = "hyperfine"
 
 [source]
 repo = "https://github.com/sharkdp/hyperfine"
-tag = "v2.0.0-alpha.2"
-commit = "d746117b419f3303f4b6263bba5b1e4bf0e6fa8c"
+tag = "v2.0.0"
+commit = "b33755fe1fca8bcc1f182c773ca3ab040bfe517d"
 
 [[test]]
 name = "help"
 run = ["hyperfine", "--help"]
 
 [update]
-# TODO: re-enable updates when we're not using prereleases anymore
-enabled = false
+enabled = true
