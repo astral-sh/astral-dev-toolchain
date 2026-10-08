@@ -17,6 +17,26 @@ jobs:
       packages: read
     uses: ./.github/workflows/test.yml
 
+  security-review:
+    name: Security review
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    # The automations STS policy must authorize this exact workflow SHA.
+    uses: astral-sh/github-actions/.github/workflows/pull-request-security-review.yml@a30f3520f325da7fed035847afec51629d0ef4fa
+    with:
+      uv-version: "0.12.23"
+      uv-checksum: "9167d72b3319674b6303c4cbe071854bba13ebdf3d76b1a7cbdc175471fb66d6"
+      setup-command: uv sync --frozen --all-packages
+    # Required for automations environment secrets; the pinned workflow does
+    # not declare named workflow_call secrets. Only same-repository PRs run.
+    secrets: inherit # zizmor: ignore[secrets-inherit]
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      id-token: write
+
   lint:
     name: Lint
     runs-on: ubuntu-24.04

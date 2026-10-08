@@ -24,7 +24,8 @@ from astral_dev_toolchain._update import (
 )
 from packaging.version import Version
 
-BOT = "github-actions[bot]"
+# Honor observations and rejections from the previous GITHUB_TOKEN updater.
+_BOTS = {"astral-automations-bot[bot]", "github-actions[bot]"}
 # Historical bot-closed PRs must not be counted as rejected updates.
 _SUPERSEDED = "<!-- astral-dev-toolchain-superseded -->"
 _COMMIT = """
@@ -174,15 +175,16 @@ class PullRequests:
             for closed in prs
             if closed["state"] == "closed"
             and not closed.get("merged_at")
-            and closed["user"]["login"] == BOT
+            and closed["user"]["login"] in _BOTS
             if (version := self.closed_version(closed, definition)) is not None
         ]
         frozen = False
         if head is not None:
             commit = gh_api("GET", f"/repos/{self.repo}/commits/{head}")
+            author = (commit.get("author") or {}).get("login")
             owned = (
-                (commit.get("author") or {}).get("login") == BOT
-                and (commit.get("committer") or {}).get("login") in {BOT, "web-flow"}
+                author in _BOTS
+                and (commit.get("committer") or {}).get("login") in {author, "web-flow"}
                 and commit["commit"]["verification"]["verified"]
                 and commit["commit"]["message"].splitlines()[0]
                 == f"toolchain: update {name}"
@@ -285,7 +287,6 @@ class PullRequests:
             f"First observed: {proposal.first_seen.isoformat()}  \n"
             f"Eligible after seven days: {proposal.eligible_at.isoformat()}\n\n"
             f"Upstream repository: `{discovery.repo}`.\n\n"
-            "Select **Approve workflows to run** in the merge box to start CI, including tool builds and smoke tests. "
             "Apply the `publish-after-merge` label before merging to publish the updated tool automatically. "
             "The updater leaves this PR unchanged until it is merged or closed. "
             "Manually closing without merging suppresses this version and older versions.\n\n"
