@@ -28,6 +28,9 @@ jobs:
       uv-version: "0.12.13"
       uv-checksum: "745765a3b6e360ad76743599ae5c42e9278c7edf8bbff9fc76d05bf2623a04dd"
       setup-command: uv sync --frozen --all-packages
+    # Required for automations environment secrets; the pinned workflow does
+    # not declare named workflow_call secrets. Only same-repository PRs run.
+    secrets: inherit # zizmor: ignore[secrets-inherit]
     permissions:
       contents: read
       issues: read
