@@ -21,10 +21,12 @@ jobs:
   update:
     name: Update tools
     runs-on: ubuntu-latest
+    environment: automations
     timeout-minutes: 30
     permissions:
-      contents: write
-      pull-requests: write
+      contents: read
+      pull-requests: read
+      id-token: write # for the credential broker
     steps:
       - name: Check out default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -35,9 +37,22 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
 
+      - name: Get updater token
+        id: token
+        if: ${{ !inputs.dry_run }}
+        # STS must authorize toolchain-update.yml on main for schedule/dispatch.
+        uses: open-security-tools/ost-simple-sts@9e012247e07c39080fb6a832dbfbcfeacebc19c4
+        with:
+          exchange-url: ${{ secrets.STS_API_URL }}/exchange
+          audience: ${{ secrets.STS_API_URL }}
+          repository: ${{ github.repository }}
+          permissions: |
+            contents: write
+            pull_requests: write
+
       - name: Discover updates and open PRs
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ inputs.dry_run && github.token || steps.token.outputs.token }}
           DRY_RUN: ${{ inputs.dry_run || false }}
         run: |
           args=()
