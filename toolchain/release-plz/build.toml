@@ -24,3 +24,7 @@ tag-prefix = "release-plz-"
 [update.observed."release-plz-v0.3.169"]
 commit = "786894b6ce1abad0d0e9bea0ace4958e099af8ca"
 first-seen = 2026-09-20T06:41:15.769467Z
+
+[update.observed."release-plz-v0.3.170"]
+commit = "aea6c32fdf4a70378ea8c7136348ba574f6fd199"
+first-seen = 2026-10-08T06:51:03.113433Z
