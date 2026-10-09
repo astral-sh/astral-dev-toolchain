@@ -6,8 +6,8 @@ name = "hyperfine"
 
 [source]
 repo = "https://github.com/sharkdp/hyperfine"
-tag = "v1.20.0"
-commit = "975fe108c4ee7bd2600d10758207b44ca3dae738"
+tag = "v2.0.0"
+commit = "b33755fe1fca8bcc1f182c773ca3ab040bfe517d"
 
 [[test]]
 name = "help"
@@ -15,7 +15,3 @@ run = ["hyperfine", "--help"]
 
 [update]
 enabled = true
-
-[update.observed."v1.21.0"]
-commit = "ad6b4e2b1ed87f9ca838b7eac057661748c7e680"
-first-seen = 2026-10-06T06:49:45.553662Z
