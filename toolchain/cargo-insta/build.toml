@@ -8,8 +8,8 @@ manifest = "cargo-insta/Cargo.toml"
 
 [source]
 repo = "https://github.com/mitsuhiko/insta"
-tag = "1.48.0"
-commit = "7f23d2e4684a789a85c50503004fb38a23c9ea58"
+tag = "1.49.0"
+commit = "5df39ceafc8a47f82ec9953aaba12072d316adc8"
 
 [[test]]
 name = "help"
