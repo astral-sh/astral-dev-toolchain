@@ -25,8 +25,8 @@ jobs:
     # The automations STS policy must authorize this exact workflow SHA.
     uses: astral-sh/github-actions/.github/workflows/pull-request-security-review.yml@b18ab2e0c11d16711c1818c8774babfa0203b909
     with:
-      uv-version: "0.12.23"
-      uv-checksum: "9167d72b3319674b6303c4cbe071854bba13ebdf3d76b1a7cbdc175471fb66d6"
+      uv-version: "0.13.0"
+      uv-checksum: "1468ebd5a5541121837c5a2817b9972ba6090fa6caa3d142620850a47fb75154"
       setup-command: uv sync --frozen --all-packages
     # Required for automations environment secrets; the pinned workflow does
     # not declare named workflow_call secrets. Only same-repository PRs run.
