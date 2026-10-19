@@ -3,6 +3,7 @@ version = 1
 [tool]
 backend = "rust"
 name = "jaq"
+manifest = "jaq/Cargo.toml"
 
 [source]
 repo = "https://github.com/01mf02/jaq"
