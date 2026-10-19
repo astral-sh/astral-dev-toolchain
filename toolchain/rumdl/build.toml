@@ -6,8 +6,8 @@ name = "rumdl"
 
 [source]
 repo = "https://github.com/rvben/rumdl"
-tag = "v0.2.78"
-commit = "9c4cc2a2ebe176de68e1788106e25af8a9bd3899"
+tag = "v0.2.79"
+commit = "a7a8434abe60f64239ea05624885f9bad66a1026"
 
 [ci]
 shard = true
@@ -19,6 +19,10 @@ run = ["rumdl", "--help"]
 [update]
 enabled = true
 
-[update.observed."v0.2.78"]
-commit = "9c4cc2a2ebe176de68e1788106e25af8a9bd3899"
-first-seen = 2026-09-30T06:49:18.613014Z
+[update.observed."v0.2.79"]
+commit = "a7a8434abe60f64239ea05624885f9bad66a1026"
+first-seen = 2026-10-10T06:46:40.823021Z
+
+[update.observed."v0.3.0"]
+commit = "19006897519812a2fdc508314b34738e5c281233"
+first-seen = 2026-10-18T06:42:14.972733Z
