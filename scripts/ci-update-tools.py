@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote, urlencode
+from uuid import uuid4
 
 from astral_dev_toolchain._git import Git, GitError
 from astral_dev_toolchain._update import (
@@ -33,6 +34,12 @@ mutation($input: CreateCommitOnBranchInput!) {
   createCommitOnBranch(input: $input) { commit { oid } }
 }
 """
+_UPDATE_REFS = """
+mutation($input: UpdateRefsInput!) {
+  updateRefs(input: $input) { clientMutationId }
+}
+"""
+_NULL_OID = "0" * 40  # GitHub's updateRefs sentinel for a missing or deleted ref.
 
 
 def gh_api(
@@ -101,6 +108,7 @@ class UpdateBranch:
 @dataclass
 class PullRequests:
     repo: str
+    repo_id: str
     base_branch: str
     base_head: str
     root: Path
@@ -229,19 +237,16 @@ class PullRequests:
                 "default branch changed during the run; retry against its new head"
             )
 
-    def save(self, discovery: Discovery, branch: UpdateBranch, content: str) -> None:
-        self.check_base_head()
-        name = branch_name(discovery.name)
-        if branch.head is None:
-            gh_api(
-                "POST",
-                f"/repos/{self.repo}/git/refs",
-                data={"ref": f"refs/heads/{name}", "sha": self.base_head},
-            )
-            branch.head = self.base_head
+    def create_branch(self, name: str) -> None:
+        gh_api(
+            "POST",
+            f"/repos/{self.repo}/git/refs",
+            data={"ref": f"refs/heads/{name}", "sha": self.base_head},
+        )
+
+    def commit(self, discovery: Discovery, name: str, head: str, content: str) -> str:
         path = discovery.definition.path.resolve().relative_to(self.root).as_posix()
-        # GitHub signs the commit and checks the expected head atomically. A
-        # later run can recover from an uncertain response by reading this file.
+        # GitHub signs the commit and checks the expected head atomically.
         response = gh_api(
             "POST",
             "/graphql",
@@ -253,7 +258,7 @@ class PullRequests:
                             "repositoryNameWithOwner": self.repo,
                             "branchName": name,
                         },
-                        "expectedHeadOid": branch.head,
+                        "expectedHeadOid": head,
                         "message": {"headline": f"toolchain: update {discovery.name}"},
                         "fileChanges": {
                             "additions": [
@@ -269,9 +274,67 @@ class PullRequests:
                 },
             },
         )
-        branch.head = response["data"]["createCommitOnBranch"]["commit"]["oid"]
+        return response["data"]["createCommitOnBranch"]["commit"]["oid"]
 
-    def publish(self, discovery: Discovery) -> str:
+    def save(self, discovery: Discovery, branch: UpdateBranch, content: str) -> None:
+        self.check_base_head()
+        name = branch_name(discovery.name)
+        if branch.head is None:
+            self.create_branch(name)
+            branch.head = self.base_head
+        branch.head = self.commit(discovery, name, branch.head, content)
+
+    def update_refs(self, updates: list[dict[str, Any]]) -> None:
+        gh_api(
+            "POST",
+            "/graphql",
+            data={
+                "query": _UPDATE_REFS,
+                "variables": {
+                    "input": {"repositoryId": self.repo_id, "refUpdates": updates}
+                },
+            },
+        )
+
+    def prepare(self, discovery: Discovery, branch: UpdateBranch, content: str) -> None:
+        self.check_base_head()
+        name = branch_name(discovery.name)
+        # Keep the observation branch intact until a signed commit is ready;
+        # resetting it first could lose cooldown timestamps if the run fails.
+        staging = f"update-staging/{discovery.name}-{uuid4().hex}"
+        self.create_branch(staging)
+        cleanup = {
+            "name": f"refs/heads/{staging}",
+            "beforeOid": self.base_head,
+            "afterOid": _NULL_OID,
+        }
+        try:
+            head = self.commit(discovery, staging, self.base_head, content)
+            cleanup["beforeOid"] = head
+            # Replace the observed branch and remove the staging branch together.
+            # The old head is a lease: never overwrite a concurrent human edit.
+            self.update_refs(
+                [
+                    {
+                        "name": f"refs/heads/{name}",
+                        "beforeOid": branch.head or _NULL_OID,
+                        "afterOid": head,
+                        "force": True,
+                    },
+                    cleanup,
+                ]
+            )
+        except Exception as error:
+            try:
+                self.update_refs([cleanup])
+            except RuntimeError as cleanup_error:
+                raise RuntimeError(
+                    f"{error}; failed to clean up {staging}: {cleanup_error}"
+                ) from error
+            raise
+        branch.head = head
+
+    def publish(self, discovery: Discovery, branch: UpdateBranch, content: str) -> str:
         proposal = discovery.proposal
         assert proposal is not None
         old = discovery.definition.tool.source
@@ -292,6 +355,8 @@ class PullRequests:
             "Manually closing without merging suppresses this version and older versions.\n\n"
             f"<!-- astral-dev-toolchain-update: {marker} -->\n"
         )
+        self.prepare(discovery, branch, content)
+        self.check_base_head()
         created = gh_api(
             "POST",
             f"/repos/{self.repo}/pulls",
@@ -319,7 +384,9 @@ def run_updates(
     base_branch = info["default_branch"]
     if ref_head(repo, base_branch) != base_head:
         raise ValueError("checkout must match the default branch head")
-    manager = PullRequests(repo, base_branch, base_head, root.resolve())
+    manager = PullRequests(
+        repo, info["node_id"], base_branch, base_head, root.resolve()
+    )
     branches, selected = {}, []
     result = Scan()
     for definition in definitions(root / "toolchain"):
@@ -385,13 +452,13 @@ def run_updates(
                         f"{discovery.name}: would record observations in {branch_name(discovery.name)}"
                     )
                 continue
-            if content != old:
+            if discovery.proposal is not None:
+                result.messages.append(manager.publish(discovery, branch, content))
+            elif content != old:
                 manager.save(discovery, branch, content)
                 result.messages.append(
                     f"{discovery.name}: recorded build.toml on {branch_name(discovery.name)}"
                 )
-            if discovery.proposal is not None:
-                result.messages.append(manager.publish(discovery))
         except (RuntimeError, ValueError) as error:
             result.errors.append(f"{discovery.name}: {error}")
     return result
