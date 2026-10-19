@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG UV_VERSION=0.13.0
+ARG UV_VERSION=0.13.1
 ARG GO_VERSION=1.27.1
 ARG UBUNTU_SNAPSHOT=20260127T200000Z
 ARG MACOSX_SDK_SHA=041600eda65c6a668f66cb7d56b7d1da3e8bcc93
@@ -153,6 +153,8 @@ FROM ${BOOTSTRAP_IMAGE} AS zygote
 
 ARG TARGETARCH
 
+# Keep uv in sync with the workspace even when the bootstrap image predates it.
+COPY --from=uv /uv /uvx /bin/
 WORKDIR ${HOME}/zygote-workspace
 COPY .python-version pyproject.toml uv.lock ./
 COPY packages/astral-dev-toolchain-core/pyproject.toml packages/astral-dev-toolchain-core/pyproject.toml
