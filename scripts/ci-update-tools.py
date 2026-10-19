@@ -99,10 +99,11 @@ def ref_head(repo: str, branch: str) -> str | None:
 
 @dataclass
 class UpdateBranch:
-    head: str | None
-    definition: Definition | None
-    ignored: Version | None
-    frozen: bool
+    name: str
+    head: str | None = None
+    definition: Definition | None = None
+    ignored: Version | None = None
+    frozen: bool = False
 
 
 @dataclass
@@ -177,7 +178,7 @@ class PullRequests:
         if len(opened) > 1:
             raise ValueError(f"{name}: multiple open update PRs")
         if opened:
-            return UpdateBranch(head, None, None, frozen=True)
+            return UpdateBranch(branch, head, frozen=True)
         rejected = [
             version
             for closed in prs
@@ -229,7 +230,7 @@ class PullRequests:
             if head is not None and not frozen
             else None
         )
-        return UpdateBranch(head, loaded, max(rejected, default=None), frozen)
+        return UpdateBranch(branch, head, loaded, max(rejected, default=None), frozen)
 
     def check_base_head(self) -> None:
         if ref_head(self.repo, self.base_branch) != self.base_head:
@@ -237,14 +238,15 @@ class PullRequests:
                 "default branch changed during the run; retry against its new head"
             )
 
-    def create_branch(self, name: str) -> None:
-        gh_api(
-            "POST",
-            f"/repos/{self.repo}/git/refs",
-            data={"ref": f"refs/heads/{name}", "sha": self.base_head},
-        )
-
-    def commit(self, discovery: Discovery, name: str, head: str, content: str) -> str:
+    def save(self, discovery: Discovery, branch: UpdateBranch, content: str) -> None:
+        self.check_base_head()
+        if branch.head is None:
+            gh_api(
+                "POST",
+                f"/repos/{self.repo}/git/refs",
+                data={"ref": f"refs/heads/{branch.name}", "sha": self.base_head},
+            )
+            branch.head = self.base_head
         path = discovery.definition.path.resolve().relative_to(self.root).as_posix()
         # GitHub signs the commit and checks the expected head atomically.
         response = gh_api(
@@ -256,9 +258,9 @@ class PullRequests:
                     "input": {
                         "branch": {
                             "repositoryNameWithOwner": self.repo,
-                            "branchName": name,
+                            "branchName": branch.name,
                         },
-                        "expectedHeadOid": head,
+                        "expectedHeadOid": branch.head,
                         "message": {"headline": f"toolchain: update {discovery.name}"},
                         "fileChanges": {
                             "additions": [
@@ -274,17 +276,19 @@ class PullRequests:
                 },
             },
         )
-        return response["data"]["createCommitOnBranch"]["commit"]["oid"]
+        branch.head = response["data"]["createCommitOnBranch"]["commit"]["oid"]
 
-    def save(self, discovery: Discovery, branch: UpdateBranch, content: str) -> None:
-        self.check_base_head()
-        name = branch_name(discovery.name)
-        if branch.head is None:
-            self.create_branch(name)
-            branch.head = self.base_head
-        branch.head = self.commit(discovery, name, branch.head, content)
-
-    def update_refs(self, updates: list[dict[str, Any]]) -> None:
+    def force_update_refs(self, *changes: tuple[UpdateBranch, str]) -> None:
+        """Update refs atomically only if each expected head still matches."""
+        updates = [
+            {
+                "name": f"refs/heads/{branch.name}",
+                "beforeOid": branch.head or _NULL_OID,
+                "afterOid": target,
+                "force": True,
+            }
+            for branch, target in changes
+        ]
         gh_api(
             "POST",
             "/graphql",
@@ -297,42 +301,24 @@ class PullRequests:
         )
 
     def prepare(self, discovery: Discovery, branch: UpdateBranch, content: str) -> None:
-        self.check_base_head()
-        name = branch_name(discovery.name)
         # Keep the observation branch intact until a signed commit is ready;
         # resetting it first could lose cooldown timestamps if the run fails.
-        staging = f"update-staging/{discovery.name}-{uuid4().hex}"
-        self.create_branch(staging)
-        cleanup = {
-            "name": f"refs/heads/{staging}",
-            "beforeOid": self.base_head,
-            "afterOid": _NULL_OID,
-        }
+        staging = UpdateBranch(f"update-staging/{discovery.name}-{uuid4().hex}")
+        delete_staging = (staging, _NULL_OID)
         try:
-            head = self.commit(discovery, staging, self.base_head, content)
-            cleanup["beforeOid"] = head
-            # Replace the observed branch and remove the staging branch together.
-            # The old head is a lease: never overwrite a concurrent human edit.
-            self.update_refs(
-                [
-                    {
-                        "name": f"refs/heads/{name}",
-                        "beforeOid": branch.head or _NULL_OID,
-                        "afterOid": head,
-                        "force": True,
-                    },
-                    cleanup,
-                ]
-            )
+            self.save(discovery, staging, content)
+            assert staging.head is not None
+            self.force_update_refs((branch, staging.head), delete_staging)
         except Exception as error:
-            try:
-                self.update_refs([cleanup])
-            except RuntimeError as cleanup_error:
-                raise RuntimeError(
-                    f"{error}; failed to clean up {staging}: {cleanup_error}"
-                ) from error
+            if staging.head is not None:
+                try:
+                    self.force_update_refs(delete_staging)
+                except RuntimeError as cleanup_error:
+                    raise RuntimeError(
+                        f"{error}; failed to clean up {staging.name}: {cleanup_error}"
+                    ) from error
             raise
-        branch.head = head
+        branch.head = staging.head
 
     def publish(self, discovery: Discovery, branch: UpdateBranch, content: str) -> str:
         proposal = discovery.proposal
@@ -363,7 +349,7 @@ class PullRequests:
             data={
                 "title": title,
                 "body": body,
-                "head": branch_name(discovery.name),
+                "head": branch.name,
                 "base": self.base_branch,
                 "draft": False,
             },
@@ -449,7 +435,7 @@ def run_updates(
                     )
                 elif content != old:
                     result.messages.append(
-                        f"{discovery.name}: would record observations in {branch_name(discovery.name)}"
+                        f"{discovery.name}: would record observations in {branch.name}"
                     )
                 continue
             if discovery.proposal is not None:
@@ -457,7 +443,7 @@ def run_updates(
             elif content != old:
                 manager.save(discovery, branch, content)
                 result.messages.append(
-                    f"{discovery.name}: recorded build.toml on {branch_name(discovery.name)}"
+                    f"{discovery.name}: recorded build.toml on {branch.name}"
                 )
         except (RuntimeError, ValueError) as error:
             result.errors.append(f"{discovery.name}: {error}")
