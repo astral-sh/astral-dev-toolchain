@@ -1,0 +1,20 @@
+version = 1
+
+[tool]
+backend = "rust"
+name = "jaq"
+
+[source]
+repo = "https://github.com/01mf02/jaq"
+tag = "v3.1.1"
+commit = "c866e70303b5dbc37d83a0b0cbacf10e90af9c8c"
+
+[ci]
+shard = true
+
+[[test]]
+name = "help"
+run = ["jaq", "--help"]
+
+[update]
+enabled = true
