@@ -7,8 +7,8 @@ manifest = "crates/release_plz/Cargo.toml"
 
 [source]
 repo = "https://github.com/release-plz/release-plz"
-tag = "release-plz-v0.3.170"
-commit = "aea6c32fdf4a70378ea8c7136348ba574f6fd199"
+tag = "release-plz-v0.3.171"
+commit = "184b30140260459811e60b604b54911dcfea77fe"
 
 [ci]
 shard = true
@@ -20,10 +20,6 @@ run = ["release-plz", "--help"]
 [update]
 enabled = true
 tag-prefix = "release-plz-"
-
-[update.observed."release-plz-v0.3.170"]
-commit = "aea6c32fdf4a70378ea8c7136348ba574f6fd199"
-first-seen = 2026-10-08T06:51:03.113433Z
 
 [update.observed."release-plz-v0.3.171"]
 commit = "184b30140260459811e60b604b54911dcfea77fe"
