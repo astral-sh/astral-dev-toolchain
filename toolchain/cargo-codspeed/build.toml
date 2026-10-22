@@ -7,8 +7,8 @@ manifest = "crates/cargo-codspeed/Cargo.toml"
 
 [source]
 repo = "https://github.com/CodSpeedHQ/codspeed-rust"
-tag = "v5.0.2"
-commit = "832f2526fe98fe32251964199e7279f620252a5b"
+tag = "v5.0.3"
+commit = "5aaf570ef4970865cc3589e8c15abf0336d4a00c"
 
 [[test]]
 name = "help"
@@ -18,6 +18,10 @@ exitcode = 1
 [update]
 enabled = true
 
-[update.observed."v5.0.2"]
-commit = "832f2526fe98fe32251964199e7279f620252a5b"
-first-seen = 2026-09-17T20:06:36.073453Z
+[update.observed."v5.0.3"]
+commit = "5aaf570ef4970865cc3589e8c15abf0336d4a00c"
+first-seen = 2026-10-15T06:46:32.723779Z
+
+[update.observed."v6.0.0"]
+commit = "5caa8dcab88a651dbb1db02e18a5fdd3bbcff7f0"
+first-seen = 2026-10-22T06:47:03.978975Z
