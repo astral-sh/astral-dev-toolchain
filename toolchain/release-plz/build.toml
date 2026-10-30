@@ -5,10 +5,17 @@ backend = "rust"
 name = "release-plz"
 manifest = "crates/release_plz/Cargo.toml"
 
+[tool.env]
+# psm 0.1.24 preprocesses its Windows ARM64 assembly when cc detects clang.
+# Use cl driver mode for cargo-xwin's SDK flags and /MD for its dynamic CRT.
+# https://github.com/rust-lang/stacker/issues/143
+"CC_aarch64-pc-windows-msvc" = "clang"
+"CFLAGS_aarch64-pc-windows-msvc" = "--driver-mode=cl /MD"
+
 [source]
 repo = "https://github.com/release-plz/release-plz"
-tag = "release-plz-v0.3.171"
-commit = "184b30140260459811e60b604b54911dcfea77fe"
+tag = "release-plz-v0.3.172"
+commit = "8b523fa6c4eb4992f18365ac50a196b4dc6a1013"
 
 [ci]
 shard = true
@@ -21,10 +28,10 @@ run = ["release-plz", "--help"]
 enabled = true
 tag-prefix = "release-plz-"
 
-[update.observed."release-plz-v0.3.171"]
-commit = "184b30140260459811e60b604b54911dcfea77fe"
-first-seen = 2026-10-11T06:47:27.729917Z
-
 [update.observed."release-plz-v0.3.172"]
 commit = "8b523fa6c4eb4992f18365ac50a196b4dc6a1013"
 first-seen = 2026-10-13T06:54:39.192890Z
+
+[update.observed."release-plz-v0.3.173"]
+commit = "907af6d031bbb69d392354803c04cd75bb6e6fa0"
+first-seen = 2026-10-20T06:46:05.853613Z
