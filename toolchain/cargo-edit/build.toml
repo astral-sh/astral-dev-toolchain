@@ -16,8 +16,8 @@ name = "cargo-edit"
 
 [source]
 repo = "https://github.com/killercup/cargo-edit"
-tag = "v0.13.13"
-commit = "138d4e2948ddcbf249c31c584b02e1b161a86221"
+tag = "v0.13.14"
+commit = "5cf6c0ba4c9bb604617630fff870213cec824a0f"
 
 [[test]]
 name = "cargo-add help"
@@ -37,3 +37,7 @@ run = ["cargo-set-version", "--help"]
 
 [update]
 enabled = true
+
+[update.observed."v0.13.14"]
+commit = "5cf6c0ba4c9bb604617630fff870213cec824a0f"
+first-seen = 2026-10-22T06:47:05.495823Z
