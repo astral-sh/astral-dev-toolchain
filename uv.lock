@@ -6,9 +6,6 @@ requires-python = ">=3.14"
 exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for backwards compatibility when using relative exclude-newer values.
 exclude-newer-span = "P7D"
 
-[options.exclude-newer-package]
-radlermass = "2026-09-24T00:00:00Z"
-
 [manifest]
 members = [
     "astral-dev-toolchain",
@@ -131,7 +128,7 @@ requires-dist = [
     { name = "astral-dev-toolchain-core", editable = "packages/astral-dev-toolchain-core" },
     { name = "maturin", specifier = ">=1.14.1" },
     { name = "packaging", specifier = ">=26.3" },
-    { name = "radlermass", specifier = ">=0.2.0" },
+    { name = "radlermass", specifier = ">=0.3.0" },
     { name = "tomlkit", specifier = ">=0.13.3" },
     { name = "ziglang", specifier = ">=0.16.0" },
 ]
@@ -302,14 +299,14 @@ wheels = [
 
 [[package]]
 name = "radlermass"
-version = "0.2.0"
+version = "0.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/96/fc/ea669afe2d1b99ae8673ad30ee0e8c0d6d21d3a0e2e52ef005031027b8c1/radlermass-0.2.0.tar.gz", hash = "sha256:bfe3142b53d5601cb3663eb0f35ba6d0cdce026948811544c0c0968a5711a0dd", size = 12685, upload-time = "2026-09-23T20:30:13.911Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ba/17/cdcb06dedfe78a7cc244df987b502b126a8d80b5fdca74c90518c6c90dab/radlermass-0.3.0.tar.gz", hash = "sha256:c8a48de6a437b4c694a74be2cc156296bd832eaf9b5015bf76693bd6297d2b32", size = 13086, upload-time = "2026-09-23T22:39:35.805Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2e/99/67ea2e4216fa736473caaa68ba87778815a78ec49f36a294a79a798d5635/radlermass-0.2.0-py3-none-any.whl", hash = "sha256:4eb049639f54794ed5a5b7c4592d3875917539aea78f6c059a74795c1817f758", size = 17248, upload-time = "2026-09-23T20:30:12.789Z" },
+    { url = "https://files.pythonhosted.org/packages/13/e6/3b5e61932fb36df5318e2e7935dff4df6b745c69dffc9f797d76c932f541/radlermass-0.3.0-py3-none-any.whl", hash = "sha256:86c58e7526ae897469cf23a2e22222efd337c346b83b8388052ae0c955faf127", size = 17720, upload-time = "2026-09-23T22:39:34.722Z" },
 ]
 
 [[package]]

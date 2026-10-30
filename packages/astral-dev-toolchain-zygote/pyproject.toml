@@ -8,7 +8,7 @@ dependencies = [
     "astral-dev-toolchain-core",
     "maturin>=1.14.1",
     "packaging>=26.3",
-    "radlermass>=0.2.0",
+    "radlermass>=0.3.0",
     "tomlkit>=0.13.3",
     "ziglang>=0.16.0",
 ]
