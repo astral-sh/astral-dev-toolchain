@@ -16,8 +16,8 @@ CARGO_TARGET_X86_64_APPLE_DARWIN_RUSTFLAGS = "-C link-arg=-F/app/macos-sdk/Syste
 
 [source]
 repo = "https://github.com/cmyr/cargo-instruments"
-tag = "v0.4.17"
-commit = "d20d2c92866e91c5683a152e104f77465b9dd35d"
+tag = "v0.4.18"
+commit = "be7998fb9fde111deb34c7ceb1e5ba7bc0f86d6b"
 
 [ci]
 shard = true
@@ -36,6 +36,6 @@ run = ["cargo-instruments", "instruments", "--help"]
 [update]
 enabled = true
 
-[update.observed."v0.4.17"]
-commit = "d20d2c92866e91c5683a152e104f77465b9dd35d"
-first-seen = 2026-09-17T20:06:39.679184Z
+[update.observed."v0.4.18"]
+commit = "be7998fb9fde111deb34c7ceb1e5ba7bc0f86d6b"
+first-seen = 2026-10-23T06:46:50.340989Z
