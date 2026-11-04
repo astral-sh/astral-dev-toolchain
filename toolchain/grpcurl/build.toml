@@ -1,0 +1,23 @@
+version = 1
+
+[tool]
+backend = "go"
+name = "grpcurl"
+version = "1.9.4"
+directory = "cmd/grpcurl"
+version-var = "main.version"
+
+[source]
+repo = "https://github.com/fullstorydev/grpcurl"
+tag = "v1.9.4"
+commit = "cf21d4aca5e9b69c06ecfa42d78e9fb942b980e8"
+
+[ci]
+shard = true
+
+[[test]]
+name = "version"
+run = ["grpcurl", "-version"]
+
+[update]
+enabled = true
