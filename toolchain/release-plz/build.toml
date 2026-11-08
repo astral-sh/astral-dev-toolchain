@@ -14,8 +14,8 @@ manifest = "crates/release_plz/Cargo.toml"
 
 [source]
 repo = "https://github.com/release-plz/release-plz"
-tag = "release-plz-v0.3.173"
-commit = "907af6d031bbb69d392354803c04cd75bb6e6fa0"
+tag = "release-plz-v0.4.2"
+commit = "466ac779afebae7e16debf9d9c49ad4890277cc2"
 
 [ci]
 shard = true
@@ -28,22 +28,10 @@ run = ["release-plz", "--help"]
 enabled = true
 tag-prefix = "release-plz-"
 
-[update.observed."release-plz-v0.3.173"]
-commit = "907af6d031bbb69d392354803c04cd75bb6e6fa0"
-first-seen = 2026-10-20T06:46:05.853613Z
-
-[update.observed."release-plz-v0.3.174"]
-commit = "156f0bb78b6e3c1559e568aef979d59ce69cff6f"
-first-seen = 2026-10-31T06:28:21.230389Z
-
-[update.observed."release-plz-v0.4.0"]
-commit = "59997057e6af1086c294cc88bb6f32acccfe0303"
-first-seen = 2026-10-31T06:28:21.230389Z
-
-[update.observed."release-plz-v0.4.1"]
-commit = "109fb5301a69d4325aa6751aa664fc91ae1fbac7"
-first-seen = 2026-10-31T06:28:21.230389Z
-
 [update.observed."release-plz-v0.4.2"]
 commit = "466ac779afebae7e16debf9d9c49ad4890277cc2"
 first-seen = 2026-10-31T06:28:21.230389Z
+
+[update.observed."release-plz-v0.4.3"]
+commit = "92e907a14715182c99c26eb734a4b3d7b3775a0b"
+first-seen = 2026-11-03T06:31:35.722212Z
