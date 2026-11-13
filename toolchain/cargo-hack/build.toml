@@ -6,8 +6,8 @@ name = "cargo-hack"
 
 [source]
 repo = "https://github.com/taiki-e/cargo-hack"
-tag = "v0.6.45"
-commit = "aad44e470198c08385a7b0c6d81284942a21a14b"
+tag = "v0.6.46"
+commit = "a9acf71d3d85185a5f1244146a184c52f7b4caf5"
 
 [[test]]
 name = "help"
@@ -15,3 +15,7 @@ run = ["cargo-hack", "hack", "--help"]
 
 [update]
 enabled = true
+
+[update.observed."v0.6.46"]
+commit = "a9acf71d3d85185a5f1244146a184c52f7b4caf5"
+first-seen = 2026-11-02T06:40:02.747548Z
