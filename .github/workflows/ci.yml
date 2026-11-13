@@ -25,6 +25,10 @@ jobs:
     # The automations STS policy must authorize this exact workflow SHA.
     uses: astral-sh/github-actions/.github/workflows/pull-request-security-review.yml@f11dbff15181b71f2cc5e8487b1ac7d7bb03ea7d
     with:
+      # NOTE: can be bumped to 26.04 or latest once codex-action
+      # works there.
+      # See: <https://github.com/openai/codex-action/issues/188>
+      runner: ubuntu-24.04
       uv-version: "0.13.5"
       uv-checksum: "f68d291c75783122dad58ab77def0e13f3233f358731db5d6d7e8715603b928f"
       setup-command: uv sync --frozen --all-packages
