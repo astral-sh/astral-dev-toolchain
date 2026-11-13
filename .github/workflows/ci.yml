@@ -29,8 +29,8 @@ jobs:
       # works there.
       # See: <https://github.com/openai/codex-action/issues/188>
       runner: ubuntu-24.04
-      uv-version: "0.13.5"
-      uv-checksum: "f68d291c75783122dad58ab77def0e13f3233f358731db5d6d7e8715603b928f"
+      uv-version: "0.13.8"
+      uv-checksum: "5acfd9177cfecf0bf87578f059728215ccc884388988f55f7a65041b57387d91"
       setup-command: uv sync --frozen --all-packages
     # Required for automations environment secrets; the pinned workflow does
     # not declare named workflow_call secrets. Only same-repository PRs run.
