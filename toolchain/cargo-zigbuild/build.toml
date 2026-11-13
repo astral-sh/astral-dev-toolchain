@@ -6,8 +6,8 @@ name = "cargo-zigbuild"
 
 [source]
 repo = "https://github.com/rust-cross/cargo-zigbuild"
-tag = "v0.24.0"
-commit = "2ffd80658c96b5ff971085dd509e58e5b441f1c8"
+tag = "v0.24.1"
+commit = "f6fbb8d78a2f770e1625c0723280c01902b983c2"
 
 [ci]
 shard = true
@@ -19,6 +19,6 @@ run = ["cargo-zigbuild", "--help"]
 [update]
 enabled = true
 
-[update.observed."v0.24.0"]
-commit = "2ffd80658c96b5ff971085dd509e58e5b441f1c8"
-first-seen = 2026-10-22T06:47:08.128884Z
+[update.observed."v0.24.1"]
+commit = "f6fbb8d78a2f770e1625c0723280c01902b983c2"
+first-seen = 2026-11-05T06:32:02.380209Z
