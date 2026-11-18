@@ -25,6 +25,3 @@ shard = true
 [[test]]
 name = "help"
 run = ["cargo-deny", "--help"]
-
-[update]
-enabled = true

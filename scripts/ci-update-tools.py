@@ -150,7 +150,6 @@ class PullRequests:
                 pass
         # Human edits to the description do not undo a rejected version.
         closed = self.read_definition(definition, pr["head"]["sha"])
-        assert definition.tool.update is not None
         return tag_version(closed.tool.source.tag, definition.tool.update.tag_prefix)
 
     def load(self, definition: Definition) -> UpdateBranch:
@@ -377,7 +376,7 @@ def run_updates(
     result = Scan()
     for definition in definitions(root / "toolchain"):
         name = definition.tool.tool.name
-        if definition.tool.update is None or not definition.tool.update.enabled:
+        if not definition.tool.update.enabled:
             result.messages.append(f"{name}: automatic updates disabled")
             continue
         try:

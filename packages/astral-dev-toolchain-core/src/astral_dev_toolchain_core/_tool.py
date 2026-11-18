@@ -61,9 +61,9 @@ class ToolObservation(_Model):
 
 
 class ToolUpdate(_Model):
-    """Opt-in discovery of newer upstream tags."""
+    """Settings for discovering newer upstream tags."""
 
-    enabled: StrictBool
+    enabled: StrictBool = True
     """Discover newer tags through Git."""
 
     tag_prefix: StrictStr = ""
@@ -160,7 +160,7 @@ class Tool[T: ToolSpec](_Model):
     tool: T
     source: ToolSource
     ci: ToolCI = Field(default_factory=ToolCI)
-    update: ToolUpdate | None = None
+    update: ToolUpdate = Field(default_factory=ToolUpdate)
     tests: tuple[ToolTest, ...] = Field(default_factory=tuple, alias="test")
 
     @classmethod

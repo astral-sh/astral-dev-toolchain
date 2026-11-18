@@ -25,7 +25,6 @@ name = "help"
 run = ["release-plz", "--help"]
 
 [update]
-enabled = true
 tag-prefix = "release-plz-"
 
 [update.observed."release-plz-v0.4.3"]

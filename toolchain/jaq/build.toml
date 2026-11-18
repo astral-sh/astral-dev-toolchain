@@ -17,9 +17,6 @@ shard = true
 name = "help"
 run = ["jaq", "--help"]
 
-[update]
-enabled = true
-
 [update.observed."v3.1.2"]
 commit = "f7fea9219d8d5364c91c6a0278765eaa0e6fa95e"
 first-seen = 2026-10-22T06:47:09.208898Z

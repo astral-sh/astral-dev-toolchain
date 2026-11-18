@@ -26,6 +26,3 @@ shard = true
 [[test]]
 name = "help"
 run = ["cargo-lambda", "--help"]
-
-[update]
-enabled = true

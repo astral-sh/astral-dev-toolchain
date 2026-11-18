@@ -13,9 +13,6 @@ commit = "a9acf71d3d85185a5f1244146a184c52f7b4caf5"
 name = "help"
 run = ["cargo-hack", "hack", "--help"]
 
-[update]
-enabled = true
-
 [update.observed."v0.6.46"]
 commit = "a9acf71d3d85185a5f1244146a184c52f7b4caf5"
 first-seen = 2026-11-02T06:40:02.747548Z

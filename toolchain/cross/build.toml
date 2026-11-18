@@ -15,6 +15,3 @@ shard = true
 [[test]]
 name = "help"
 run = ["cross", "--help"]
-
-[update]
-enabled = true
