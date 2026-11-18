@@ -110,6 +110,9 @@ the future.
 The configured `source.tag` must resolve to the exact commit in `source.commit`.
 Builds validate this after cloning the source.
 
+CI builds each target in a separate job by default. Set `ci.shard = false` to
+build all targets for a tool in one job.
+
 See the definitions under [toolchain](./toolchain/) for concrete examples.
 
 ### Updating tools

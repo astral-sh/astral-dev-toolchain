@@ -9,9 +9,6 @@ repo = "https://github.com/rust-cross/cargo-zigbuild"
 tag = "v0.24.1"
 commit = "f6fbb8d78a2f770e1625c0723280c01902b983c2"
 
-[ci]
-shard = true
-
 [update.observed."v0.24.1"]
 commit = "f6fbb8d78a2f770e1625c0723280c01902b983c2"
 first-seen = 2026-11-05T06:32:02.380209Z

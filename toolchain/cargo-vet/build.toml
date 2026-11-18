@@ -10,7 +10,6 @@ tag = "v0.10.2"
 commit = "28f617ea97392d527799649db588a6dbb695da8d"
 
 [ci]
-shard = true
 # ring 0.16.20 does not support Windows ARM64. cargo-vet's upgrade to ring 0.17
 # is blocked on completing the corresponding supply-chain audits:
 # https://github.com/mozilla/cargo-vet/pull/645

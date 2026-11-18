@@ -8,6 +8,3 @@ name = "critcmp"
 repo = "https://github.com/BurntSushi/critcmp"
 tag = "0.1.8"
 commit = "eccc77b50f847be82b4790260fda6721fdf1b181"
-
-[ci]
-shard = true

@@ -17,9 +17,6 @@ repo = "https://github.com/release-plz/release-plz"
 tag = "release-plz-v0.4.3"
 commit = "92e907a14715182c99c26eb734a4b3d7b3775a0b"
 
-[ci]
-shard = true
-
 [update]
 tag-prefix = "release-plz-"
 

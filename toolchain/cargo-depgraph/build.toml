@@ -8,6 +8,3 @@ name = "cargo-depgraph"
 repo = "https://codeberg.org/jplatte/cargo-depgraph"
 tag = "v1.6.0"
 commit = "1e5f6142637230e8128f559b23daf43e1d407c07"
-
-[ci]
-shard = true

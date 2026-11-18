@@ -20,7 +20,6 @@ tag = "v0.4.18"
 commit = "be7998fb9fde111deb34c7ceb1e5ba7bc0f86d6b"
 
 [ci]
-shard = true
 # cargo-instruments requires macOS and Xcode Instruments.
 exclude-targets = [
     "aarch64-unknown-linux-gnu",

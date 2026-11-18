@@ -19,6 +19,3 @@ manifest = "crates/cargo-lambda-cli/Cargo.toml"
 repo = "https://github.com/cargo-lambda/cargo-lambda"
 tag = "v1.9.2"
 commit = "67129fc48dbfa3d75fb7de19fef9efb536082992"
-
-[ci]
-shard = true
