@@ -12,9 +12,10 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import tomlkit
-from astral_dev_toolchain_core import Tool, ToolObservation
+from astral_dev_toolchain_core import Tool, ToolSource
 from packaging.version import Version
-from tomlkit.items import InlineTable, Table
+from tomlkit.items import AoT, Array
+from tomlkit.toml_document import TOMLDocument
 
 from ._git import Git, GitError
 
@@ -73,6 +74,45 @@ def definitions(directory: Path, selected: Collection[str] = ()) -> list[Definit
     return [found[name] for name in sorted(set(selected) or found)]
 
 
+def _write_sources(document: TOMLDocument, sources: tuple[ToolSource, ...]) -> None:
+    tables = document["source"]
+    if isinstance(tables, MutableMapping):
+        # Convert a legacy definition when updating it, retaining the pin's comments.
+        spec = document["tool"]
+        assert isinstance(spec, MutableMapping)
+        spec["repo"] = tables.pop("repo")
+        pin = tomlkit.table()
+        pin.update(tables)
+        tables = tomlkit.aot()
+        tables.append(pin)
+        document["source"] = tables
+        if isinstance(update := document.get("update"), MutableMapping):
+            update.pop("observed", None)
+
+    assert isinstance(tables, (AoT, Array))
+    pin = tables[0]
+    assert isinstance(pin, MutableMapping)
+    first_seen_key = "first_seen" if "first_seen" in pin else "first-seen"
+    source = sources[0]
+    for key, value in (
+        ("tag", source.tag),
+        ("commit", source.commit),
+        (first_seen_key, source.first_seen),
+    ):
+        if value is None:
+            pin.pop(key, None)
+        elif pin.get(key) != value:
+            pin[key] = value
+
+    del tables[1:]
+    for source in sources[1:]:
+        table = tomlkit.inline_table() if isinstance(tables, Array) else tomlkit.table()
+        table.update(source.model_dump(by_alias=True, exclude_none=True))
+        if isinstance(tables, AoT):
+            table.add(tomlkit.nl())
+        tables.append(table)
+
+
 @dataclass(frozen=True)
 class Proposal:
     old_version: Version
@@ -90,7 +130,7 @@ class Proposal:
 class Discovery:
     definition: Definition
     repo: str
-    observed: dict[str, ToolObservation]
+    observed: dict[str, ToolSource]
     proposal: Proposal | None
 
     @property
@@ -101,46 +141,47 @@ class Discovery:
         """Apply a proposal and record observations."""
         base = self.definition
         document = tomlkit.parse(base.text)
-        settings = base.tool.update
-        floor = (
-            self.proposal.version
-            if self.proposal is not None
-            else tag_version(base.tool.source.tag, settings.tag_prefix)
-        )
-        observed = {
-            tag: observation
-            for tag, observation in self.observed.items()
-            if floor is None
-            or (version := tag_version(tag, settings.tag_prefix)) is not None
-            and version >= floor
-        }
-        if settings.observed != observed:
-            if "update" not in document:
-                document["update"] = tomlkit.table()
-            update = document["update"]
-            assert isinstance(update, MutableMapping)
-            if observed:
-                update["observed"] = {
-                    tag: observation.model_dump(by_alias=True)
-                    for tag, observation in sorted(observed.items())
-                }
-            else:
-                update.pop("observed", None)
-        if self.proposal is not None:
-            proposal = self.proposal
+        pin = base.tool.source
+        prefix = base.tool.update.tag_prefix
+        if (proposal := self.proposal) is not None:
             explicit = base.tool.tool.version
             if explicit is not None and Version(explicit) != proposal.old_version:
                 raise ValueError(
                     f"{self.name}: explicit tool.version differs from the pinned tag; update manually"
                 )
-            source, spec = document["source"], document["tool"]
-            assert isinstance(source, (Table, InlineTable))
-            assert isinstance(spec, (Table, InlineTable))
-            source["tag"] = proposal.tag
-            source["commit"] = proposal.commit
+            spec = document["tool"]
+            assert isinstance(spec, MutableMapping)
             if explicit is not None:
                 spec["version"] = str(proposal.version)
             spec.pop("rebuild", None)
+            pin = ToolSource(
+                tag=proposal.tag, commit=proposal.commit, first_seen=proposal.first_seen
+            )
+            floor = proposal.version
+        else:
+            first_seen = (
+                observed_pin.first_seen
+                if (observed_pin := self.observed.get(pin.tag)) is not None
+                else None
+            )
+            pin = pin.model_copy(update={"first_seen": first_seen})
+            floor = tag_version(pin.tag, prefix)
+
+        sources = (
+            pin,
+            *(
+                observation
+                for tag, observation in sorted(self.observed.items())
+                if tag != pin.tag
+                and (
+                    floor is None
+                    or (version := tag_version(tag, prefix)) is not None
+                    and version >= floor
+                )
+            ),
+        )
+        if sources != base.tool.sources:
+            _write_sources(document, sources)
         rendered = tomlkit.dumps(document)
         Tool.model_validate(tomllib.loads(rendered))
         return rendered
@@ -180,11 +221,15 @@ def _observe_tags(
     tags: Mapping[str, str],
     prior: Tool,
     observed_at: datetime,
-) -> dict[str, ToolObservation]:
+) -> dict[str, ToolSource]:
     prefix, current = _version_floor(tool)
     old = (
-        prior.update.observed
-        if prior.update.tag_prefix == prefix and prior.source.repo == repo
+        {
+            source.tag: source
+            for source in prior.sources
+            if source.first_seen is not None
+        }
+        if prior.update.tag_prefix == prefix and prior.tool.repo == repo
         else {}
     )
     observed = {}
@@ -195,16 +240,20 @@ def _observe_tags(
         observation = old.get(tag)
         if version == current and observation is None:
             continue
-        if observation is not None and observation.first_seen > observed_at:
+        if (
+            observation is not None
+            and observation.first_seen is not None
+            and observation.first_seen > observed_at
+        ):
             raise ValueError(f"{repo}/{tag}: first-seen timestamp is in the future")
         if observation is None or observation.commit != commit:
-            observation = ToolObservation(commit=commit, first_seen=observed_at)
+            observation = ToolSource(tag=tag, commit=commit, first_seen=observed_at)
         observed[tag] = observation
     return observed
 
 
 def _select_proposal(
-    tool: Tool, observed: Mapping[str, ToolObservation], observed_at: datetime
+    tool: Tool, observed: Mapping[str, ToolSource], observed_at: datetime
 ) -> tuple[Proposal | None, list[str]]:
     prefix, current = _version_floor(tool)
     candidates, messages = [], []
@@ -213,22 +262,23 @@ def _select_proposal(
         assert version is not None
         if version == current:
             continue
-        eligible_at = observation.first_seen + COOLDOWN
-        if eligible_at > observed_at:
+        assert observation.first_seen is not None
+        candidate = Proposal(
+            current, version, tag, observation.commit, observation.first_seen
+        )
+        if candidate.eligible_at > observed_at:
             messages.append(
-                f"{tool.tool.name}: {tag} cooling down until {eligible_at.isoformat()}"
+                f"{tool.tool.name}: {tag} cooling down until {candidate.eligible_at.isoformat()}"
             )
         else:
-            candidates.append((version, tag, observation))
+            candidates.append(candidate)
     if not candidates:
         messages.append(f"{tool.tool.name}: no eligible update")
         return None, messages
-    version, tag, observation = max(candidates, key=lambda c: (c[0], c[1]))
-    if len({o.commit for v, _, o in candidates if v == version}) != 1:
-        raise ValueError(f"{tool.tool.name}: ambiguous tags for {version}")
-    return Proposal(
-        current, version, tag, observation.commit, observation.first_seen
-    ), messages
+    proposal = max(candidates, key=lambda candidate: (candidate.version, candidate.tag))
+    if len({c.commit for c in candidates if c.version == proposal.version}) != 1:
+        raise ValueError(f"{tool.tool.name}: ambiguous tags for {proposal.version}")
+    return proposal, messages
 
 
 def _scan_tool(
@@ -291,7 +341,7 @@ def scan(
         if not tool.update.enabled:
             result.messages.append(f"{tool.tool.name}: automatic updates disabled")
             continue
-        groups[tool.source.repo].append(definition)
+        groups[tool.tool.repo].append(definition)
 
     for index, (repo, tools) in enumerate(groups.items(), 1):
         logger.info("[%d/%d] checking upstream tags for %s", index, len(groups), repo)
@@ -319,8 +369,8 @@ def recheck(discovery: Discovery, git: Git, now: datetime | None = None) -> None
         discovery.proposal = None
         raise ValueError(f"{discovery.name}: candidate tag {proposal.tag} is missing")
     if commit != proposal.commit:
-        discovery.observed[proposal.tag] = ToolObservation(
-            commit=commit, first_seen=now or datetime.now(UTC)
+        discovery.observed[proposal.tag] = ToolSource(
+            tag=proposal.tag, commit=commit, first_seen=now or datetime.now(UTC)
         )
         discovery.proposal = None
         raise ValueError(f"{discovery.name}: candidate tag moved; cooldown restarted")

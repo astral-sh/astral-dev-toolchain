@@ -4,6 +4,7 @@ version = 1
 backend = "rust"
 name = "cargo-lambda"
 manifest = "crates/cargo-lambda-cli/Cargo.toml"
+repo = "https://github.com/cargo-lambda/cargo-lambda"
 
 [tool.env]
 # ring selects clang on Windows ARM64, but cargo-xwin supplies clang-cl flags.
@@ -15,7 +16,6 @@ manifest = "crates/cargo-lambda-cli/Cargo.toml"
 # intentional: cargo-xwin overwrites the underscored CFLAGS variant.
 "CFLAGS_aarch64-pc-windows-msvc" = "--driver-mode=cl"
 
-[source]
-repo = "https://github.com/cargo-lambda/cargo-lambda"
+[[source]]
 tag = "v1.9.2"
 commit = "67129fc48dbfa3d75fb7de19fef9efb536082992"

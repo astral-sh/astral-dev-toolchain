@@ -4,6 +4,7 @@ version = 1
 backend = "rust"
 name = "release-plz"
 manifest = "crates/release_plz/Cargo.toml"
+repo = "https://github.com/release-plz/release-plz"
 
 [tool.env]
 # psm 0.1.24 preprocesses its Windows ARM64 assembly when cc detects clang.
@@ -12,14 +13,10 @@ manifest = "crates/release_plz/Cargo.toml"
 "CC_aarch64-pc-windows-msvc" = "clang"
 "CFLAGS_aarch64-pc-windows-msvc" = "--driver-mode=cl /MD"
 
-[source]
-repo = "https://github.com/release-plz/release-plz"
+[[source]]
 tag = "release-plz-v0.4.3"
 commit = "92e907a14715182c99c26eb734a4b3d7b3775a0b"
+first-seen = 2026-11-03T06:31:35.722212Z
 
 [update]
 tag-prefix = "release-plz-"
-
-[update.observed."release-plz-v0.4.3"]
-commit = "92e907a14715182c99c26eb734a4b3d7b3775a0b"
-first-seen = 2026-11-03T06:31:35.722212Z

@@ -6,12 +6,9 @@ name = "pinact"
 version = "5.0.2"
 directory = "cmd/pinact"
 version-var = "main.version"
-
-[source]
 repo = "https://github.com/suzuki-shunsuke/pinact"
-tag = "v5.0.2"
-commit = "916099054848d14535ac3c20366361b6e98aa268"
 
-[update.observed."v5.0.2"]
+[[source]]
+tag = "v5.0.2"
 commit = "916099054848d14535ac3c20366361b6e98aa268"
 first-seen = 2026-10-26T07:00:47.059094Z

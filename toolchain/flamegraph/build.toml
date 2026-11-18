@@ -4,6 +4,7 @@ version = 1
 backend = "rust"
 name = "flamegraph"
 binaries = ["flamegraph", "cargo-flamegraph"]
+repo = "https://github.com/flamegraph-rs/flamegraph"
 
 [tool.env]
 # ring selects clang on Windows ARM64, but cargo-xwin supplies clang-cl flags.
@@ -15,11 +16,7 @@ binaries = ["flamegraph", "cargo-flamegraph"]
 # intentional: cargo-xwin overwrites the underscored CFLAGS variant.
 "CFLAGS_aarch64-pc-windows-msvc" = "--driver-mode=cl"
 
-[source]
-repo = "https://github.com/flamegraph-rs/flamegraph"
+[[source]]
 tag = "v0.6.15"
-commit = "da17b953ffc88883e3362865bea4ea93a6264f49"
-
-[update.observed."v0.6.15"]
 commit = "da17b953ffc88883e3362865bea4ea93a6264f49"
 first-seen = 2026-11-03T06:31:35.164136Z

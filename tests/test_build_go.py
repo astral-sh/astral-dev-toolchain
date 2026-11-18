@@ -22,14 +22,13 @@ def builder(tmp_path):
         tool=GoToolSpec(
             backend="go",
             name="example",
+            repo="https://example.com/upstream",
             version="v1.2.3",
             rebuild=2,
             directory="cmd/example",
             version_var="main.version",
         ),
-        source=ToolSource(
-            repo="https://example.com/upstream", tag="v1.2.3", commit="a" * 40
-        ),
+        sources=(ToolSource(tag="v1.2.3", commit="a" * 40),),
     )
     plan = Plan(
         git_bin=Path("git"),

@@ -3,16 +3,13 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-hack"
-
-[source]
 repo = "https://github.com/taiki-e/cargo-hack"
+
+[[source]]
 tag = "v0.6.46"
 commit = "a9acf71d3d85185a5f1244146a184c52f7b4caf5"
+first-seen = 2026-11-02T06:40:02.747548Z
 
 [[test]]
 name = "help"
 run = ["cargo-hack", "hack", "--help"]
-
-[update.observed."v0.6.46"]
-commit = "a9acf71d3d85185a5f1244146a184c52f7b4caf5"
-first-seen = 2026-11-02T06:40:02.747548Z

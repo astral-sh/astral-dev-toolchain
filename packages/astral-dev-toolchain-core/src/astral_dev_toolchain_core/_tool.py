@@ -13,9 +13,13 @@ from pydantic import (
     StrictInt,
     StrictStr,
     StringConstraints,
+    model_validator,
 )
 
 type _NonEmptyString = Annotated[StrictStr, StringConstraints(min_length=1)]
+type _Commit = Annotated[
+    StrictStr, StringConstraints(pattern=r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
+]
 
 
 def _to_kebab(s: str) -> str:
@@ -51,15 +55,6 @@ class ToolCI(_Model):
     """Targets to omit when the upstream tool cannot be built for them."""
 
 
-class ToolObservation(_Model):
-    """The first observation of an upstream candidate tag and commit."""
-
-    commit: Annotated[
-        StrictStr, StringConstraints(pattern=r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
-    ]
-    first_seen: AwareDatetime
-
-
 class ToolUpdate(_Model):
     """Settings for discovering newer upstream tags."""
 
@@ -68,9 +63,6 @@ class ToolUpdate(_Model):
 
     tag_prefix: StrictStr = ""
     """Literal prefix to remove before parsing a tag's version."""
-
-    observed: dict[_NonEmptyString, ToolObservation] = Field(default_factory=dict)
-    """Candidate tags and their first-seen timestamps, maintained by the updater."""
 
 
 class _ToolSpec(_Model):
@@ -83,6 +75,9 @@ class _ToolSpec(_Model):
     This does not affect binary names; it serves as the suffix for the package name.
     For example, a tool named `foo` will become `astral-dev-toolchain-foo`.
     """
+
+    repo: StrictStr
+    """The upstream Git repository for all source revisions."""
 
     binaries: tuple[_NonEmptyString, ...] = Field(
         default_factory=lambda data: (data["name"],)
@@ -99,11 +94,11 @@ class _ToolSpec(_Model):
 
 
 class ToolSource(_Model):
-    """The source origin used to fetch a tool for building."""
+    """A pinned or observed upstream revision."""
 
-    repo: StrictStr
-    commit: StrictStr
-    tag: StrictStr
+    tag: _NonEmptyString
+    commit: _Commit
+    first_seen: AwareDatetime | None = None
 
 
 class RustToolSpec(_ToolSpec):
@@ -174,7 +169,7 @@ class Tool[T: ToolSpec](_Model):
 
     version: Literal[1] = 1
     tool: T
-    source: ToolSource
+    sources: Annotated[tuple[ToolSource, ...], Field(min_length=1, alias="source")]
     ci: ToolCI = Field(default_factory=ToolCI)
     update: ToolUpdate = Field(default_factory=ToolUpdate)
     tests: tuple[ToolTest, ...] = Field(default_factory=_default_tests, alias="test")
@@ -185,6 +180,58 @@ class Tool[T: ToolSpec](_Model):
             raw = tomllib.load(stream)
 
         return cls.model_validate(raw)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _read_legacy_source(cls, value: Any) -> Any:
+        # Existing updater branches and historical PRs can still use [source].
+        if not isinstance(value, dict) or not isinstance(
+            pin := value.get("source"), dict
+        ):
+            return value
+        spec = value.get("tool")
+        if not isinstance(spec, dict) or "repo" in spec or "repo" not in pin:
+            return value
+
+        settings = value.get("update", {})
+        if not isinstance(settings, dict):
+            return value
+        settings = settings.copy()
+        observations = settings.pop("observed", {})
+        if not isinstance(observations, dict):
+            return value
+
+        pin = pin.copy()
+        repo = pin.pop("repo")
+        sources: list[dict[str, Any] | ToolSource] = [pin]
+        for tag, fields in observations.items():
+            if not isinstance(fields, dict) or "tag" in fields:
+                raise ValueError(f"invalid observation for {tag!r}")
+            observed = ToolSource.model_validate({"tag": tag, **fields})
+            if observed.first_seen is None:
+                raise ValueError(f"observation for {tag!r} requires first-seen")
+            if tag != pin.get("tag"):
+                sources.append(observed)
+            elif observed.commit == pin.get("commit"):
+                pin["first_seen"] = observed.first_seen
+        return value | {
+            "tool": spec | {"repo": repo},
+            "source": sources,
+            "update": settings,
+        }
+
+    @model_validator(mode="after")
+    def _validate_sources(self) -> Tool[T]:
+        if len({source.tag for source in self.sources}) != len(self.sources):
+            raise ValueError("source tags must be unique")
+        if any(source.first_seen is None for source in self.sources[1:]):
+            raise ValueError("candidate source entries require first-seen timestamps")
+        return self
+
+    @property
+    def source(self) -> ToolSource:
+        """The first source entry is the revision used for builds."""
+        return self.sources[0]
 
     @property
     def python_package_name(self) -> str:

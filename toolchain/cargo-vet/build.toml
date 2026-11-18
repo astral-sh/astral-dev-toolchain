@@ -3,9 +3,9 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-vet"
-
-[source]
 repo = "https://github.com/mozilla/cargo-vet"
+
+[[source]]
 tag = "v0.10.2"
 commit = "28f617ea97392d527799649db588a6dbb695da8d"
 

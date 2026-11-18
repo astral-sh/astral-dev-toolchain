@@ -13,7 +13,7 @@ _README_NOTICE = """\
 def readme_notice(tool: Tool) -> str:
     return _README_NOTICE.format(
         tool_name=tool.tool.name,
-        repo=tool.source.repo,
+        repo=tool.tool.repo,
         tag=tool.source.tag,
         commit=tool.source.commit,
     )

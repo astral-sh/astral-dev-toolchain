@@ -52,11 +52,11 @@ to harm.
 ## Toolchain source changes
 
 Apply this review to every added `toolchain/*/build.toml` and every definition
-whose `[source].repo`, `tag`, or `commit` changes. Use the file contents at
-the PR merge base and head, not the title, author, update observations, or
-release notes, to determine which sources changed. Review manual and automated
-bumps alike. Observation-only changes do not select a new source; review those
-for updater integrity without re-scanning unchanged upstream code.
+whose pinned repository, tag, or commit changes. Read `tool.repo` and the first
+`[[source]]` entry, or the `[source]` table in older definitions. Compare the
+pins at the PR merge base and head. Review manual and automated bumps alike.
+Review observation-only changes for updater integrity without re-scanning
+unchanged upstream code.
 
 For each source change:
 
@@ -79,7 +79,7 @@ For each source change:
   in upstream files or execute fetched programs merely to collect source.
   Keep this repository checked out at the PR head; use separate temporary
   directories or GitHub's API for upstream objects.
-- Attach each finding to the changed `[source]` line in this repository's
+- Attach each finding to the changed pin line in this repository's
   `build.toml`, and cite the relevant upstream commit, path and behavior in
   the finding text. Add only the caller's changed paths to `reviewed_paths`,
   never external upstream paths.

@@ -55,7 +55,7 @@ class Builder:
                 self.tool.source.tag,
                 "--depth",
                 "1",
-                self.tool.source.repo,
+                self.tool.tool.repo,
                 ".",
             ],
             check=True,
