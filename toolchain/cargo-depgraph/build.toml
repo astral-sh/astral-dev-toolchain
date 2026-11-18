@@ -11,7 +11,3 @@ commit = "1e5f6142637230e8128f559b23daf43e1d407c07"
 
 [ci]
 shard = true
-
-[[test]]
-name = "help"
-run = ["cargo-depgraph", "--help"]

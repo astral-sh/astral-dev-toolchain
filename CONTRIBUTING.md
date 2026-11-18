@@ -73,18 +73,11 @@ See `--help` for additional options.
 
 ## Testing built tools
 
-Each tool definition can declare smoke tests that run against the wheel for the
-current platform:
-
-```toml
-[[test]]
-name = "help"
-run = ["some-tool", "--help"]
-```
-
-`run` is an argument array and is executed directly, without a shell. The
-expected exit code defaults to zero; set `exitcode` when a test intentionally
-returns another code:
+By default, smoke tests run `--help` on each executable in `tool.binaries` and
+expect exit code zero. `tool.binaries` defaults to a list containing the tool name.
+Define `[[test]]` entries to replace the generated tests. The runner executes
+`run` as an argument array without a shell. Set `exitcode` when a test
+intentionally returns a different code:
 
 ```toml
 [[test]]
@@ -93,9 +86,8 @@ run = ["some-tool", "check"]
 exitcode = 2
 ```
 
-Tests are optional. Tools without tests are reported as skipped and are not
-installed. To install wheels exclusively from `toolchain-dist/` and run all
-configured tests for the current platform:
+Set `test = []` at the top level to skip smoke tests for a tool. To install wheels
+exclusively from `toolchain-dist/` and run tests for the current platform:
 
 ```shell
 uv run astral-dev-toolchain test

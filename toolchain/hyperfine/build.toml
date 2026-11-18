@@ -8,7 +8,3 @@ name = "hyperfine"
 repo = "https://github.com/sharkdp/hyperfine"
 tag = "v2.0.0"
 commit = "b33755fe1fca8bcc1f182c773ca3ab040bfe517d"
-
-[[test]]
-name = "help"
-run = ["hyperfine", "--help"]

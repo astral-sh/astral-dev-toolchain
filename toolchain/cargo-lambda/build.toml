@@ -22,7 +22,3 @@ commit = "67129fc48dbfa3d75fb7de19fef9efb536082992"
 
 [ci]
 shard = true
-
-[[test]]
-name = "help"
-run = ["cargo-lambda", "--help"]

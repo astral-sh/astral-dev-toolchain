@@ -3,6 +3,7 @@ version = 1
 [tool]
 backend = "rust"
 name = "flamegraph"
+binaries = ["flamegraph", "cargo-flamegraph"]
 
 [tool.env]
 # ring selects clang on Windows ARM64, but cargo-xwin supplies clang-cl flags.
@@ -21,15 +22,6 @@ commit = "da17b953ffc88883e3362865bea4ea93a6264f49"
 
 [ci]
 shard = true
-
-[[test]]
-name = "bare-help"
-run = ["flamegraph", "--help"]
-
-[[test]]
-name = "cargo-flamegraph-help"
-run = ["cargo-flamegraph", "--help"]
-
 
 [update.observed."v0.6.15"]
 commit = "da17b953ffc88883e3362865bea4ea93a6264f49"

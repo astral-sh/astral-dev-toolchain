@@ -2,7 +2,7 @@
 
 import tomllib
 from pathlib import Path
-from typing import Annotated, Literal
+from typing import Annotated, Any, Literal
 
 from pydantic import (
     AwareDatetime,
@@ -84,6 +84,11 @@ class _ToolSpec(_Model):
     For example, a tool named `foo` will become `astral-dev-toolchain-foo`.
     """
 
+    binaries: tuple[_NonEmptyString, ...] = Field(
+        default_factory=lambda data: (data["name"],)
+    )
+    """The executables to smoke-test by default."""
+
     rebuild: StrictInt | None = None
     """
     The tool's rebuild number.
@@ -153,6 +158,17 @@ class GoToolSpec(_ToolSpec):
 type ToolSpec = Annotated[RustToolSpec | GoToolSpec, Field(discriminator="backend")]
 
 
+def _default_tests(data: dict[str, Any]) -> tuple[ToolTest, ...]:
+    binaries = data["tool"].binaries
+    return tuple(
+        ToolTest(
+            name="help" if len(binaries) == 1 else f"{binary} help",
+            run=(binary, "--help"),
+        )
+        for binary in binaries
+    )
+
+
 class Tool[T: ToolSpec](_Model):
     """A tool definition in a `build.toml` file."""
 
@@ -161,7 +177,7 @@ class Tool[T: ToolSpec](_Model):
     source: ToolSource
     ci: ToolCI = Field(default_factory=ToolCI)
     update: ToolUpdate = Field(default_factory=ToolUpdate)
-    tests: tuple[ToolTest, ...] = Field(default_factory=tuple, alias="test")
+    tests: tuple[ToolTest, ...] = Field(default_factory=_default_tests, alias="test")
 
     @classmethod
     def load(cls, path: Path) -> Tool:

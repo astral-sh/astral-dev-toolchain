@@ -20,10 +20,6 @@ commit = "92e907a14715182c99c26eb734a4b3d7b3775a0b"
 [ci]
 shard = true
 
-[[test]]
-name = "help"
-run = ["release-plz", "--help"]
-
 [update]
 tag-prefix = "release-plz-"
 
