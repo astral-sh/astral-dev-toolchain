@@ -19,9 +19,6 @@ shard = true
 name = "help"
 run = ["pinact", "--help"]
 
-[update]
-enabled = true
-
 [update.observed."v5.0.2"]
 commit = "916099054848d14535ac3c20366361b6e98aa268"
 first-seen = 2026-10-26T07:00:47.059094Z

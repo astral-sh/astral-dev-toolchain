@@ -122,11 +122,12 @@ See the definitions under [toolchain](./toolchain/) for concrete examples.
 
 ### Updating tools
 
-Opt a tool hosted in any Git repository into automatic updates in its `build.toml`:
+Automatic updates are enabled by default. Set `update.enabled = false` to
+disable automatic updates for a tool. If its upstream tags have a custom prefix,
+configure it in `build.toml`:
 
 ```toml
 [update]
-enabled = true
 tag-prefix = "cargo-audit/" # Optional; an initial v is stripped automatically.
 ```
 

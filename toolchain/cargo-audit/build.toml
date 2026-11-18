@@ -15,5 +15,4 @@ name = "help"
 run = ["cargo-audit", "--help"]
 
 [update]
-enabled = true
 tag-prefix = "cargo-audit/"

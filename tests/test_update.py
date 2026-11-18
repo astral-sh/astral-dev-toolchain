@@ -9,9 +9,7 @@ from packaging.version import Version
 
 
 def observations(path):
-    update = Tool.load(path).update
-    assert update is not None
-    return update.observed
+    return Tool.load(path).update.observed
 
 
 @pytest.mark.parametrize(

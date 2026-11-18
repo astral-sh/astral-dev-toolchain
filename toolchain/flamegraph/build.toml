@@ -31,9 +31,6 @@ name = "cargo-flamegraph-help"
 run = ["cargo-flamegraph", "--help"]
 
 
-[update]
-enabled = true
-
 [update.observed."v0.6.15"]
 commit = "da17b953ffc88883e3362865bea4ea93a6264f49"
 first-seen = 2026-11-03T06:31:35.164136Z

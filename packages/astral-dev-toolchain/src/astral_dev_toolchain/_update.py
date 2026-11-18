@@ -6,7 +6,7 @@ import re
 import tempfile
 import tomllib
 from collections import defaultdict
-from collections.abc import Collection, Mapping
+from collections.abc import Collection, Mapping, MutableMapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -101,22 +101,24 @@ class Discovery:
         """Apply a proposal and record observations."""
         base = self.definition
         document = tomlkit.parse(base.text)
-        update = document["update"]
-        assert isinstance(update, (Table, InlineTable))
-        assert base.tool.update is not None
+        settings = base.tool.update
         floor = (
             self.proposal.version
             if self.proposal is not None
-            else tag_version(base.tool.source.tag, base.tool.update.tag_prefix)
+            else tag_version(base.tool.source.tag, settings.tag_prefix)
         )
         observed = {
             tag: observation
             for tag, observation in self.observed.items()
             if floor is None
-            or (version := tag_version(tag, base.tool.update.tag_prefix)) is not None
+            or (version := tag_version(tag, settings.tag_prefix)) is not None
             and version >= floor
         }
-        if base.tool.update.observed != observed:
+        if settings.observed != observed:
+            if "update" not in document:
+                document["update"] = tomlkit.table()
+            update = document["update"]
+            assert isinstance(update, MutableMapping)
             if observed:
                 update["observed"] = {
                     tag: observation.model_dump(by_alias=True)
@@ -165,7 +167,6 @@ def _check_pin(tool: Tool, tags: Mapping[str, str]) -> None:
 
 
 def _version_floor(tool: Tool) -> tuple[str, Version]:
-    assert tool.update is not None
     prefix = tool.update.tag_prefix
     current = tag_version(tool.source.tag, prefix)
     if current is None:
@@ -183,9 +184,7 @@ def _observe_tags(
     prefix, current = _version_floor(tool)
     old = (
         prior.update.observed
-        if prior.update is not None
-        and prior.update.tag_prefix == prefix
-        and prior.source.repo == repo
+        if prior.update.tag_prefix == prefix and prior.source.repo == repo
         else {}
     )
     observed = {}
@@ -289,7 +288,7 @@ def scan(
     groups: dict[str, list[Definition]] = defaultdict(list)
     for definition in selected:
         tool = definition.tool
-        if tool.update is None or not tool.update.enabled:
+        if not tool.update.enabled:
             result.messages.append(f"{tool.tool.name}: automatic updates disabled")
             continue
         groups[tool.source.repo].append(definition)

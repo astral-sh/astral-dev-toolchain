@@ -22,7 +22,6 @@ name = "help"
 run = ["cargo-nextest", "--help"]
 
 [update]
-enabled = true
 tag-prefix = "cargo-nextest-"
 
 [update.observed."cargo-nextest-0.9.151"]

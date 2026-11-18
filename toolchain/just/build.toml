@@ -13,9 +13,6 @@ tag = "1.59.0"
 name = "help"
 run = ["just", "--help"]
 
-[update]
-enabled = true
-
 [update.observed."1.59.0"]
 commit = "2638e9c0941edb1f409da7426fa7842887656973"
 first-seen = 2026-10-15T06:46:38.741365Z

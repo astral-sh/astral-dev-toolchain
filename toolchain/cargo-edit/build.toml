@@ -35,9 +35,6 @@ run = ["cargo-upgrade", "--help"]
 name = "cargo-set-version help"
 run = ["cargo-set-version", "--help"]
 
-[update]
-enabled = true
-
 [update.observed."v0.13.14"]
 commit = "5cf6c0ba4c9bb604617630fff870213cec824a0f"
 first-seen = 2026-10-22T06:47:05.495823Z

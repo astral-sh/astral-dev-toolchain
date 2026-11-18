@@ -16,6 +16,3 @@ shard = true
 name = "help"
 # Expects to be run via `cargo bloat`, not `cargo-bloat`.
 run = ["cargo", "bloat", "--help"]
-
-[update]
-enabled = true

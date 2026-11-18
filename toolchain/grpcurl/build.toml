@@ -18,6 +18,3 @@ shard = true
 [[test]]
 name = "version"
 run = ["grpcurl", "-version"]
-
-[update]
-enabled = true

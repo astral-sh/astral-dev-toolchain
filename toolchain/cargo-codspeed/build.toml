@@ -15,9 +15,6 @@ name = "help"
 run = ["cargo-codspeed", "--help"]
 exitcode = 1
 
-[update]
-enabled = true
-
 [update.observed."v6.0.0"]
 commit = "5caa8dcab88a651dbb1db02e18a5fdd3bbcff7f0"
 first-seen = 2026-10-22T06:47:03.978975Z
