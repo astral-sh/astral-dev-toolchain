@@ -6,8 +6,8 @@ name = "cargo-vet"
 
 [source]
 repo = "https://github.com/mozilla/cargo-vet"
-tag = "v0.10.2"
-commit = "28f617ea97392d527799649db588a6dbb695da8d"
+tag = "v0.10.3"
+commit = "cef4dd43a0b9d2d37febf0e5ad42abc6d9ea5472"
 
 [ci]
 shard = true
@@ -23,3 +23,7 @@ run = ["cargo-vet", "--help"]
 
 [update]
 enabled = true
+
+[update.observed."v0.10.3"]
+commit = "cef4dd43a0b9d2d37febf0e5ad42abc6d9ea5472"
+first-seen = 2026-10-23T06:46:51.727948Z
