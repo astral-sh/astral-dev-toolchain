@@ -9,6 +9,8 @@ repo = "https://github.com/taiki-e/cargo-llvm-cov"
 tag = "v0.9.1"
 commit = "0dc905679ae6b4740b186f6e2c2ef1ab78fb76d7"
 
+# Call the wheel's binary directly so the test can run without Cargo.
+# Pass llvm-cov as the first argument, as Cargo does for custom subcommands.
 [[test]]
 name = "help"
 run = ["cargo-llvm-cov", "llvm-cov", "--help"]
