@@ -1,2 +1,4 @@
 dist/
 toolchain-dist/
+
+__pycache__/
