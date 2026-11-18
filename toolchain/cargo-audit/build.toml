@@ -7,8 +7,8 @@ manifest = "cargo-audit/Cargo.toml"
 
 [source]
 repo = "https://github.com/rustsec/rustsec"
-tag = "cargo-audit/v0.22.2"
-commit = "281452c35cf0870969042374110f099a411bc185"
+tag = "cargo-audit/v0.23.0"
+commit = "e3cf3703ed640854af152d019c976ae78211aa22"
 
 [[test]]
 name = "help"
@@ -17,3 +17,7 @@ run = ["cargo-audit", "--help"]
 [update]
 enabled = true
 tag-prefix = "cargo-audit/"
+
+[update.observed."cargo-audit/v0.23.0"]
+commit = "e3cf3703ed640854af152d019c976ae78211aa22"
+first-seen = 2026-11-11T06:31:37.282458Z
