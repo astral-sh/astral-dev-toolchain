@@ -5,12 +5,9 @@ backend = "rust"
 name = "cargo-insta"
 # insta's repo root is a workdir, `cargo-insta` lives in a subdir
 manifest = "cargo-insta/Cargo.toml"
-
-[source]
 repo = "https://github.com/mitsuhiko/insta"
-tag = "1.49.0"
-commit = "5df39ceafc8a47f82ec9953aaba12072d316adc8"
 
-[update.observed."1.49.0"]
+[[source]]
+tag = "1.49.0"
 commit = "5df39ceafc8a47f82ec9953aaba12072d316adc8"
 first-seen = 2026-10-03T06:54:06.812880Z

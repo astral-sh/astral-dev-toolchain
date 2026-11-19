@@ -3,8 +3,8 @@ version = 1
 [tool]
 backend = "rust"
 name = "critcmp"
-
-[source]
 repo = "https://github.com/BurntSushi/critcmp"
+
+[[source]]
 tag = "0.1.8"
 commit = "eccc77b50f847be82b4790260fda6721fdf1b181"

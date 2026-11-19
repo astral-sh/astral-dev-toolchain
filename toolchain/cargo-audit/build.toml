@@ -4,15 +4,12 @@ version = 1
 backend = "rust"
 name = "cargo-audit"
 manifest = "cargo-audit/Cargo.toml"
-
-[source]
 repo = "https://github.com/rustsec/rustsec"
+
+[[source]]
 tag = "cargo-audit/v0.23.0"
 commit = "e3cf3703ed640854af152d019c976ae78211aa22"
+first-seen = 2026-11-11T06:31:37.282458Z
 
 [update]
 tag-prefix = "cargo-audit/"
-
-[update.observed."cargo-audit/v0.23.0"]
-commit = "e3cf3703ed640854af152d019c976ae78211aa22"
-first-seen = 2026-11-11T06:31:37.282458Z

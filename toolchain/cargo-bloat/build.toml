@@ -3,9 +3,9 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-bloat"
-
-[source]
 repo = "https://github.com/RazrFalcon/cargo-bloat"
+
+[[source]]
 tag = "v0.12.1"
 commit = "69ccabda2b1671c4fd675e9a660af29ee985506f"
 

@@ -6,6 +6,7 @@ name = "cargo-instruments"
 # Vendor OpenSSL and libgit2, and use macOS's system libcurl to avoid
 # curl-sys's Clang runtime lookup when cross-compiling with Zig.
 features = ["cargo/all-static"]
+repo = "https://github.com/cmyr/cargo-instruments"
 
 [tool.env]
 # Zig emits duplicate libiconv load commands that macOS rejects at startup.
@@ -14,10 +15,10 @@ features = ["cargo/all-static"]
 CARGO_TARGET_AARCH64_APPLE_DARWIN_RUSTFLAGS = "-C link-arg=-F/app/macos-sdk/System/Library/Frameworks -C link-arg=-L/app/macos-sdk/usr/lib -C link-arg=-Wl,-dead_strip_dylibs"
 CARGO_TARGET_X86_64_APPLE_DARWIN_RUSTFLAGS = "-C link-arg=-F/app/macos-sdk/System/Library/Frameworks -C link-arg=-L/app/macos-sdk/usr/lib -C link-arg=-Wl,-dead_strip_dylibs"
 
-[source]
-repo = "https://github.com/cmyr/cargo-instruments"
+[[source]]
 tag = "v0.4.18"
 commit = "be7998fb9fde111deb34c7ceb1e5ba7bc0f86d6b"
+first-seen = 2026-10-23T06:46:50.340989Z
 
 [ci]
 # cargo-instruments requires macOS and Xcode Instruments.
@@ -31,7 +32,3 @@ exclude-targets = [
 [[test]]
 name = "help"
 run = ["cargo-instruments", "instruments", "--help"]
-
-[update.observed."v0.4.18"]
-commit = "be7998fb9fde111deb34c7ceb1e5ba7bc0f86d6b"
-first-seen = 2026-10-23T06:46:50.340989Z

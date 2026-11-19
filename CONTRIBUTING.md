@@ -107,8 +107,9 @@ Each `build.toml` tells astral-dev-toolchain how to build a tool in the toolchai
 At the moment, Go and Rust builds are supported. Other backends may be added in
 the future.
 
-The configured `source.tag` must resolve to the exact commit in `source.commit`.
-Builds validate this after cloning the source.
+Set `tool.repo` to the upstream Git repository. The first `[[source]]` entry
+pins the tag and commit used for builds. Builds verify that the tag resolves to
+that exact commit after cloning the repository.
 
 CI builds each target in a separate job by default. Set `ci.shard = false` to
 build all targets for a tool in one job.
@@ -125,6 +126,10 @@ configure it in `build.toml`:
 [update]
 tag-prefix = "cargo-audit/" # Optional; an initial v is stripped automatically.
 ```
+
+The updater records candidates in additional `[[source]]` entries with
+`first-seen` timestamps. When it promotes a candidate to the first entry, it
+keeps that timestamp. A manual pin may omit `first-seen`.
 
 Updates are normally performed automatically in CI, but can also be run locally:
 

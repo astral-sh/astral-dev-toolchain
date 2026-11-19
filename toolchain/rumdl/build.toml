@@ -3,12 +3,9 @@ version = 1
 [tool]
 backend = "rust"
 name = "rumdl"
-
-[source]
 repo = "https://github.com/rvben/rumdl"
-tag = "v0.3.2"
-commit = "1e0f1d13c87418c31e0d59dacddd98f27a02efcc"
 
-[update.observed."v0.3.2"]
+[[source]]
+tag = "v0.3.2"
 commit = "1e0f1d13c87418c31e0d59dacddd98f27a02efcc"
 first-seen = 2026-10-30T06:36:02.047870Z

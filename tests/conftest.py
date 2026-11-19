@@ -71,6 +71,7 @@ def definition(
     spec = {
         "name": name,
         "backend": "go" if go else "rust",
+        "repo": repo,
         "rebuild": tomlkit.integer(2).comment("Reset for the next upstream release."),
     }
     if go:
@@ -80,13 +81,14 @@ def definition(
             {
                 "version": 1,
                 "tool": spec,
-                "source": {
-                    "repo": repo,
-                    "tag": tomlkit.string(f"{prefix}v1.9.0").comment(
-                        "Keep this comment."
-                    ),
-                    "commit": commit,
-                },
+                "source": [
+                    {
+                        "tag": tomlkit.string(f"{prefix}v1.9.0").comment(
+                            "Keep this comment."
+                        ),
+                        "commit": commit,
+                    }
+                ],
                 "update": {"enabled": True, "tag-prefix": prefix},
                 "test": [{"name": "help", "run": ["example", "--help"]}],
             }

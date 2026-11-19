@@ -4,6 +4,7 @@ version = 1
 backend = "rust"
 name = "cargo-edit"
 binaries = ["cargo-add", "cargo-rm", "cargo-upgrade", "cargo-set-version"]
+repo = "https://github.com/killercup/cargo-edit"
 
 [tool.env]
 # ring selects clang on Windows ARM64, but cargo-xwin supplies clang-cl flags.
@@ -15,11 +16,7 @@ binaries = ["cargo-add", "cargo-rm", "cargo-upgrade", "cargo-set-version"]
 # intentional: cargo-xwin overwrites the underscored CFLAGS variant.
 "CFLAGS_aarch64-pc-windows-msvc" = "--driver-mode=cl"
 
-[source]
-repo = "https://github.com/killercup/cargo-edit"
+[[source]]
 tag = "v0.13.14"
-commit = "5cf6c0ba4c9bb604617630fff870213cec824a0f"
-
-[update.observed."v0.13.14"]
 commit = "5cf6c0ba4c9bb604617630fff870213cec824a0f"
 first-seen = 2026-10-22T06:47:05.495823Z

@@ -1,7 +1,9 @@
+import tomllib
 from datetime import timedelta
 from unittest.mock import patch
 
 import pytest
+import tomlkit
 from astral_dev_toolchain._git import Git
 from astral_dev_toolchain._update import COOLDOWN, definitions, scan, tag_version
 from astral_dev_toolchain_core import Tool
@@ -9,7 +11,11 @@ from packaging.version import Version
 
 
 def observations(path):
-    return Tool.load(path).update.observed
+    return {
+        source.tag: source
+        for source in Tool.load(path).sources
+        if source.first_seen is not None
+    }
 
 
 @pytest.mark.parametrize(
@@ -47,6 +53,7 @@ def test_update_lifecycle(tool_factory, upstream, update, go, now):
     assert not update(now=now + COOLDOWN).errors
     tool = Tool.load(path)
     assert (tool.source.tag, tool.source.commit) == ("v2.0.0", upstream.commits[2])
+    assert tool.source.first_seen == now
     assert tool.tool.version == ("2.0.0" if go else None)
     assert "# Keep this comment." in path.read_text()
     assert "rebuild" not in path.read_text()
@@ -64,6 +71,27 @@ def test_highest_eligible_version(tool_file, upstream, update, now):
     assert not update(now=now + COOLDOWN).errors
     assert Tool.load(tool_file).source.tag == "v1.10.0"
     assert observations(tool_file)["v2.0.0"].first_seen == now + COOLDOWN
+
+
+def test_legacy_observation_keeps_its_cooldown(tool_file, upstream, update, now):
+    legacy = tomllib.loads(tool_file.read_text())
+    legacy["source"] = {
+        "repo": legacy["tool"].pop("repo"),
+        **legacy["source"][0],
+    }
+    legacy["update"]["observed"] = {
+        "v2.0.0": {"commit": upstream.commits[2], "first-seen": now}
+    }
+    tool_file.write_text(tomlkit.dumps(legacy))
+
+    assert not update(now=now + COOLDOWN).errors
+    tool = Tool.load(tool_file)
+    assert (tool.source.tag, tool.source.commit) == ("v2.0.0", upstream.commits[2])
+    assert tool.source.first_seen == now
+    migrated = tomllib.loads(tool_file.read_text())
+    assert migrated["tool"]["repo"] == upstream.url
+    assert [source["tag"] for source in migrated["source"]] == ["v2.0.0"]
+    assert "observed" not in migrated["update"]
 
 
 def test_candidate_observation_lifecycle(observed_tool, upstream, update, now):
