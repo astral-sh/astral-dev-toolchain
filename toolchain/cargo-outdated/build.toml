@@ -9,6 +9,3 @@ features = ["vendored-openssl"]
 repo = "https://github.com/kbknapp/cargo-outdated"
 tag = "v0.19.0"
 commit = "9a25ecbfcd0a1d7394bb521e89022950bca9d7b0"
-
-[ci]
-shard = true

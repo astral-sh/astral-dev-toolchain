@@ -9,9 +9,6 @@ repo = "https://github.com/RazrFalcon/cargo-bloat"
 tag = "v0.12.1"
 commit = "69ccabda2b1671c4fd675e9a660af29ee985506f"
 
-[ci]
-shard = true
-
 [[test]]
 name = "help"
 # Expects to be run via `cargo bloat`, not `cargo-bloat`.

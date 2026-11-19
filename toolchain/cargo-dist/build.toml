@@ -11,9 +11,6 @@ repo = "https://github.com/axodotdev/cargo-dist"
 tag = "v0.34.0"
 commit = "294c1b25d372d86e74cafead8469b9f36d02da29"
 
-[ci]
-shard = true
-
 [update.observed."v0.34.0"]
 commit = "294c1b25d372d86e74cafead8469b9f36d02da29"
 first-seen = 2026-11-02T06:40:02.122624Z

@@ -14,9 +14,6 @@ repo = "https://github.com/nextest-rs/nextest"
 tag = "cargo-nextest-0.9.151"
 commit = "6b3f994577a98874a2e0ea5bef77fbbab3434044"
 
-[ci]
-shard = true
-
 [update]
 tag-prefix = "cargo-nextest-"
 

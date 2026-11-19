@@ -12,7 +12,4 @@ repo = "https://github.com/fullstorydev/grpcurl"
 tag = "v1.9.4"
 commit = "cf21d4aca5e9b69c06ecfa42d78e9fb942b980e8"
 
-[ci]
-shard = true
-
 # The docs use -help. The default smoke test uses --help, which also exits 0.

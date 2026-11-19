@@ -44,7 +44,7 @@ class ToolTest(_Model):
 class ToolCI(_Model):
     """CI settings for a tool."""
 
-    shard: StrictBool = False
+    shard: StrictBool = True
     """Build each target in a separate CI job."""
 
     exclude_targets: tuple[_NonEmptyString, ...] = Field(default_factory=tuple)
