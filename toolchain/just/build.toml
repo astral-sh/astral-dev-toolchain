@@ -9,10 +9,6 @@ repo = "https://github.com/casey/just"
 commit = "2638e9c0941edb1f409da7426fa7842887656973"
 tag = "1.59.0"
 
-[[test]]
-name = "help"
-run = ["just", "--help"]
-
 [update.observed."1.59.0"]
 commit = "2638e9c0941edb1f409da7426fa7842887656973"
 first-seen = 2026-10-15T06:46:38.741365Z

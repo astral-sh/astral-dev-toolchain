@@ -24,10 +24,6 @@ repo = "https://github.com/Boshen/cargo-shear"
 tag = "v1.14.0"
 commit = "e789f424d9b780d207c06342c63ef95609389fd6"
 
-[[test]]
-name = "help"
-run = ["cargo-shear", "--help"]
-
 [update.observed."v1.14.0"]
 commit = "e789f424d9b780d207c06342c63ef95609389fd6"
 first-seen = 2026-09-23T06:46:17.291926Z

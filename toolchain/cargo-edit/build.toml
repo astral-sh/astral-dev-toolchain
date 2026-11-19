@@ -3,6 +3,7 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-edit"
+binaries = ["cargo-add", "cargo-rm", "cargo-upgrade", "cargo-set-version"]
 
 [tool.env]
 # ring selects clang on Windows ARM64, but cargo-xwin supplies clang-cl flags.
@@ -18,22 +19,6 @@ name = "cargo-edit"
 repo = "https://github.com/killercup/cargo-edit"
 tag = "v0.13.14"
 commit = "5cf6c0ba4c9bb604617630fff870213cec824a0f"
-
-[[test]]
-name = "cargo-add help"
-run = ["cargo-add", "--help"]
-
-[[test]]
-name = "cargo-rm help"
-run = ["cargo-rm", "--help"]
-
-[[test]]
-name = "cargo-upgrade help"
-run = ["cargo-upgrade", "--help"]
-
-[[test]]
-name = "cargo-set-version help"
-run = ["cargo-set-version", "--help"]
 
 [update.observed."v0.13.14"]
 commit = "5cf6c0ba4c9bb604617630fff870213cec824a0f"

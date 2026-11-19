@@ -13,6 +13,8 @@ commit = "5caa8dcab88a651dbb1db02e18a5fdd3bbcff7f0"
 [[test]]
 name = "help"
 run = ["cargo-codspeed", "--help"]
+# Drop this override when the pinned release includes the upstream fix.
+# https://github.com/CodSpeedHQ/codspeed-rust/pull/208
 exitcode = 1
 
 [update.observed."v6.0.0"]

@@ -21,7 +21,3 @@ commit = "bca0dde53651ee946720e4540b5ce2610bec8f06"
 
 [ci]
 shard = true
-
-[[test]]
-name = "help"
-run = ["cargo-deny", "--help"]

@@ -12,7 +12,3 @@ commit = "9a25ecbfcd0a1d7394bb521e89022950bca9d7b0"
 
 [ci]
 shard = true
-
-[[test]]
-name = "help"
-run = ["cargo-outdated", "--help"]

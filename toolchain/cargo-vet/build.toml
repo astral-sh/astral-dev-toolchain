@@ -16,7 +16,3 @@ shard = true
 # https://github.com/mozilla/cargo-vet/pull/645
 # Remove this exclusion once cargo-vet ships that upgrade.
 exclude-targets = ["aarch64-pc-windows-msvc"]
-
-[[test]]
-name = "help"
-run = ["cargo-vet", "--help"]

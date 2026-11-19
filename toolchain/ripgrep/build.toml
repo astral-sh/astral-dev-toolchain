@@ -3,6 +3,7 @@ version = 1
 [tool]
 backend = "rust"
 name = "ripgrep"
+binaries = ["rg"]
 
 [tool.env]
 # Rust's MSVC linker emits /DEBUG even with debuginfo disabled. Ignore missing
@@ -16,7 +17,3 @@ CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS = "-C target-feature=+crt-static -
 repo = "https://github.com/BurntSushi/ripgrep"
 tag = "15.2.0"
 commit = "e89fff89ac9af12e8d4ce9d5fd07beb408ca730f"
-
-[[test]]
-name = "help"
-run = ["rg", "--help"]

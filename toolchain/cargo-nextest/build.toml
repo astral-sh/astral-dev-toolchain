@@ -17,10 +17,6 @@ commit = "6b3f994577a98874a2e0ea5bef77fbbab3434044"
 [ci]
 shard = true
 
-[[test]]
-name = "help"
-run = ["cargo-nextest", "--help"]
-
 [update]
 tag-prefix = "cargo-nextest-"
 

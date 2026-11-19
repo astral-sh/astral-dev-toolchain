@@ -3,6 +3,7 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-dist"
+binaries = ["dist"]
 manifest = "cargo-dist/Cargo.toml"
 
 [source]
@@ -12,10 +13,6 @@ commit = "294c1b25d372d86e74cafead8469b9f36d02da29"
 
 [ci]
 shard = true
-
-[[test]]
-name = "help"
-run = ["dist", "--help"]
 
 [update.observed."v0.34.0"]
 commit = "294c1b25d372d86e74cafead8469b9f36d02da29"
