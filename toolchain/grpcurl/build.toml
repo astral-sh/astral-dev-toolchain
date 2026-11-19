@@ -16,5 +16,6 @@ commit = "cf21d4aca5e9b69c06ecfa42d78e9fb942b980e8"
 shard = true
 
 [[test]]
-name = "version"
-run = ["grpcurl", "-version"]
+name = "help"
+# The docs use -help. The two-dash spelling also works and exits with code 0.
+run = ["grpcurl", "--help"]
