@@ -26,9 +26,6 @@ shard = true
 name = "help"
 run = ["cargo-deny", "--help"]
 
-[update]
-enabled = true
-
 [update.observed."0.21.0"]
 commit = "4b1f2002a11077f25437c2983f0a1a5439a886f4"
 first-seen = 2026-11-17T06:33:04.312805Z
