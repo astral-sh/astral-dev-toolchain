@@ -3,6 +3,7 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-deny"
+repo = "https://github.com/EmbarkStudios/cargo-deny"
 
 [tool.env]
 # ring selects clang on Windows ARM64, but cargo-xwin supplies clang-cl flags.
@@ -14,18 +15,16 @@ name = "cargo-deny"
 # intentional: cargo-xwin overwrites the underscored CFLAGS variant.
 "CFLAGS_aarch64-pc-windows-msvc" = "--driver-mode=cl"
 
-[source]
-repo = "https://github.com/EmbarkStudios/cargo-deny"
+[[source]]
 tag = "0.20.2"
 commit = "bca0dde53651ee946720e4540b5ce2610bec8f06"
-
-[ci]
-shard = true
-
-[[test]]
-name = "help"
-run = ["cargo-deny", "--help"]
-
-[update.observed."0.21.0"]
+[[source]]
+tag = "0.21.0"
 commit = "4b1f2002a11077f25437c2983f0a1a5439a886f4"
 first-seen = 2026-11-17T06:33:04.312805Z
+
+[[source]]
+tag = "0.22.0"
+commit = "6d512893fcfea934e8e69c5df44132a4970c42d0"
+first-seen = 2026-11-20T06:32:38.276472Z
+
