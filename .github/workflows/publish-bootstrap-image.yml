@@ -1,4 +1,4 @@
-name: Publish bootstrap image
+name: Publish bootstrap and zygote images
 
 on:
   push:
@@ -10,16 +10,11 @@ permissions:
 
 jobs:
   version:
-    name: Validate bootstrap version
+    name: Resolve image version
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - name: Check out repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
       - name: Resolve image version
         id: version
         shell: bash
@@ -27,32 +22,30 @@ jobs:
           tag_version="${GITHUB_REF_NAME#bootstrap-v}"
           echo "version=${tag_version}" >> "${GITHUB_OUTPUT}"
 
-  publish:
+  bootstrap:
     name: Publish bootstrap
     needs: version
-    uses: docker/github-builder/.github/workflows/build.yml@58cb9f5b71b1836d6f690c1e95effdeb9b98cb8a # v1.17.0
+    uses: ./.github/workflows/publish-image.yml
     permissions:
       contents: read
       id-token: write
       packages: write
     with:
+      image: astral-dev-toolchain-bootstrap
       target: bootstrap-image
-      output: image
-      push: true
-      platforms: linux/amd64,linux/arm64
-      cache: true
-      cache-mode: max
-      cache-scope: astral-dev-toolchain-bootstrap
-      meta-images: ghcr.io/astral-sh/astral-dev-toolchain-bootstrap
-      meta-tags: |
-        type=raw,value=${{ needs.version.outputs.version }}
-        type=raw,value=latest
-      meta-labels: |
-        org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-        org.opencontainers.image.version=${{ needs.version.outputs.version }}
-      set-meta-labels: true
-    secrets:
-      registry-auths: |
-        - registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      version: ${{ needs.version.outputs.version }}
+
+  zygote:
+    name: Publish zygote
+    needs: [version, bootstrap]
+    uses: ./.github/workflows/publish-image.yml
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      image: astral-dev-toolchain-zygote
+      target: zygote
+      version: ${{ needs.version.outputs.version }}
+      build-args: |
+        BOOTSTRAP_IMAGE=ghcr.io/astral-sh/astral-dev-toolchain-bootstrap@${{ needs.bootstrap.outputs.digest }}

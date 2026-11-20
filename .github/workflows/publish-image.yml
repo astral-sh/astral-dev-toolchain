@@ -1,0 +1,53 @@
+name: Publish image
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        required: true
+        type: string
+      target:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+      build-args:
+        type: string
+    outputs:
+      digest:
+        description: Digest of the published multi-platform image
+        value: ${{ jobs.publish.outputs.digest }}
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    uses: docker/github-builder/.github/workflows/build.yml@58cb9f5b71b1836d6f690c1e95effdeb9b98cb8a # v1.17.0
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      target: ${{ inputs.target }}
+      build-args: ${{ inputs.build-args }}
+      output: image
+      push: true
+      platforms: linux/amd64,linux/arm64
+      cache: true
+      cache-mode: max
+      cache-scope: ${{ inputs.image }}
+      meta-images: ghcr.io/astral-sh/${{ inputs.image }}
+      meta-tags: |
+        type=raw,value=${{ inputs.version }}
+        type=raw,value=latest
+      meta-labels: |
+        org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        org.opencontainers.image.version=${{ inputs.version }}
+      set-meta-labels: true
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
