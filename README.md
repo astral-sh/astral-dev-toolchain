@@ -8,9 +8,17 @@ this is for.
 
 ## Usage
 
-As an end user, you should be installing astral-dev-toolchain packages.
+> [!IMPORTANT]
+>
+> For now, astral-dev-toolchain is primarily targeted at Astral team-members,
+> as well as any third-party contributors who want to collaborate on Astral's
+> projects. We do not yet recommend using the toolchain outside of Astral's
+> projects.
 
-TODO.
+See the `astral-dev-toolchain-*` packages maintained by the [Astral org on PyPI](https://pypi.org/org/astral/).
+
+Each of these packages can be installed via `uv` (or `uvx`) and expose their
+corresponding tool(s).
 
 ## Development
 
