@@ -40,6 +40,23 @@ uv run astral-dev-toolchain \
     build --dry-run --select just
 ```
 
+## Publishing images
+
+Push a `bootstrap-v<version>` tag to publish the bootstrap image or a
+`zygote-v<version>` tag to publish the zygote image. Each release updates
+the `<version>` and `latest` tags for that image on GHCR.
+
+Zygote builds from `ghcr.io/astral-sh/astral-dev-toolchain-bootstrap:latest`.
+If a release needs a new bootstrap, wait for it to publish before tagging zygote.
+
+To build a tool with the published zygote image, run
+
+```shell
+uv run astral-dev-toolchain \
+    --image ghcr.io/astral-sh/astral-dev-toolchain-zygote:latest \
+    build --select just
+```
+
 ## Building tools
 
 Install the host-side CLI:

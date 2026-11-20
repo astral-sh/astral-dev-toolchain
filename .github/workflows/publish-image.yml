@@ -1,0 +1,64 @@
+name: Publish image
+
+on:
+  push:
+    tags:
+      - "bootstrap-v*"
+      - "zygote-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    name: Resolve image from tag
+    runs-on: ubuntu-24.04
+    outputs:
+      name: ${{ steps.tag.outputs.name }}
+      target: ${{ steps.tag.outputs.target }}
+      version: ${{ steps.tag.outputs.version }}
+    steps:
+      - name: Resolve image name, Dockerfile target and version
+        id: tag
+        shell: bash
+        run: |
+          case "${GITHUB_REF_NAME}" in
+            bootstrap-v*) target=bootstrap-image ;;
+            zygote-v*) target=zygote ;;
+            *) exit 1 ;;
+          esac
+          {
+            echo "name=astral-dev-toolchain-${GITHUB_REF_NAME%%-v*}"
+            echo "target=${target}"
+            echo "version=${GITHUB_REF_NAME#*-v}"
+          } >> "${GITHUB_OUTPUT}"
+
+  publish:
+    name: Publish ${{ needs.image.outputs.name }}
+    needs: image
+    uses: docker/github-builder/.github/workflows/build.yml@58cb9f5b71b1836d6f690c1e95effdeb9b98cb8a # v1.17.0
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      target: ${{ needs.image.outputs.target }}
+      output: image
+      push: true
+      platforms: linux/amd64,linux/arm64
+      cache: true
+      cache-mode: max
+      cache-scope: ${{ needs.image.outputs.name }}
+      meta-images: ghcr.io/astral-sh/${{ needs.image.outputs.name }}
+      meta-tags: |
+        type=raw,value=${{ needs.image.outputs.version }}
+        type=raw,value=latest
+      meta-labels: |
+        org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        org.opencontainers.image.version=${{ needs.image.outputs.version }}
+      set-meta-labels: true
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}

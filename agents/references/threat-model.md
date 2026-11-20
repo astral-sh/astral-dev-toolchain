@@ -99,9 +99,10 @@ For each source change:
   unreviewed artifacts must not acquire release tokens or influence a
   privileged job's checkout, caches, commands or published artifacts.
 - PyPI publishing is authorized by a merged PR labeled `publish-after-merge`,
-  or by an explicit non-dry-run dispatch. GHCR bootstrap publishing follows a
-  `bootstrap-v*` tag. Evaluate trigger changes against those authorization
-  boundaries. A build or smoke job must not run with publishing credentials.
+  or by an explicit non-dry-run dispatch. The `bootstrap-v*` and `zygote-v*`
+  tags authorize publishing the corresponding image to GHCR. Evaluate trigger
+  changes against those authorization boundaries. A build or smoke job must not
+  run with publishing credentials.
 - The security review runs only for PRs whose head is in this repository.
   Its setup executes before the sandbox; widening the trigger can expose
   credentials or a privileged runner to untrusted setup code. Keep its threat
