@@ -21,6 +21,6 @@ CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_RUSTFLAGS = "-C target-feature=+crt-static"
 CARGO_TARGET_AARCH64_PC_WINDOWS_MSVC_RUSTFLAGS = "-C target-feature=+crt-static"
 
 [[source]]
-tag = "v1.14.0"
-commit = "e789f424d9b780d207c06342c63ef95609389fd6"
-first-seen = 2026-09-23T06:46:17.291926Z
+tag = "v1.14.1"
+commit = "66b62cb43ca6a153db29c8229a2396656141dec9"
+first-seen = 2026-11-13T06:32:14.724853Z
