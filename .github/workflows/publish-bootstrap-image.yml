@@ -1,0 +1,51 @@
+name: Publish bootstrap and zygote images
+
+on:
+  push:
+    tags:
+      - "bootstrap-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  version:
+    name: Resolve image version
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Resolve image version
+        id: version
+        shell: bash
+        run: |
+          tag_version="${GITHUB_REF_NAME#bootstrap-v}"
+          echo "version=${tag_version}" >> "${GITHUB_OUTPUT}"
+
+  bootstrap:
+    name: Publish bootstrap
+    needs: version
+    uses: ./.github/workflows/publish-image.yml
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      image: astral-dev-toolchain-bootstrap
+      target: bootstrap-image
+      version: ${{ needs.version.outputs.version }}
+
+  zygote:
+    name: Publish zygote
+    needs: [version, bootstrap]
+    uses: ./.github/workflows/publish-image.yml
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    with:
+      image: astral-dev-toolchain-zygote
+      target: zygote
+      version: ${{ needs.version.outputs.version }}
+      build-args: |
+        BOOTSTRAP_IMAGE=ghcr.io/astral-sh/astral-dev-toolchain-bootstrap@${{ needs.bootstrap.outputs.digest }}

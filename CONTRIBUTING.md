@@ -42,12 +42,9 @@ uv run astral-dev-toolchain \
 
 ## Publishing images
 
-Push a `bootstrap-v<version>` tag to publish the bootstrap image or a
-`zygote-v<version>` tag to publish the zygote image. Each release updates
-the `<version>` and `latest` tags for that image on GHCR.
-
-Zygote builds from `ghcr.io/astral-sh/astral-dev-toolchain-bootstrap:latest`.
-If a release needs a new bootstrap, wait for it to publish before tagging zygote.
+Push a `bootstrap-v<version>` tag to publish both images to GHCR. The workflow
+publishes bootstrap first, then uses its digest as the base for zygote. Each
+image gets the `<version>` and `latest` tags for Linux on amd64 and arm64.
 
 To build a tool with the published zygote image, run
 
