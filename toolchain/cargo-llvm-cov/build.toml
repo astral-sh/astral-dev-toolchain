@@ -12,6 +12,11 @@ first-seen = 2026-09-08T20:57:03.699997Z
 
 # Call the wheel's binary directly so the test can run without Cargo.
 # Pass llvm-cov as the first argument, as Cargo does for custom subcommands.
+[[source]]
+tag = "v0.9.2"
+commit = "d19511510348ec11cd3e6b6870fd0b582e4f6db1"
+first-seen = 2026-11-21T06:30:47.775142Z
+
 [[test]]
 name = "help"
 run = ["cargo-llvm-cov", "llvm-cov", "--help"]
