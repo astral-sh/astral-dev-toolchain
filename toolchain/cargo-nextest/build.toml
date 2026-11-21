@@ -11,9 +11,9 @@ no-default-features = true
 repo = "https://github.com/nextest-rs/nextest"
 
 [[source]]
-tag = "cargo-nextest-0.9.151"
-commit = "6b3f994577a98874a2e0ea5bef77fbbab3434044"
-first-seen = 2026-11-03T06:31:34.334109Z
+tag = "cargo-nextest-0.9.152"
+commit = "26ebeda79b9ae1d008cf64ddb01984bcaa6e1239"
+first-seen = 2026-11-14T06:29:36.896762Z
 
 [update]
 tag-prefix = "cargo-nextest-"
