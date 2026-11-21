@@ -11,6 +11,11 @@ tag = "v6.0.0"
 commit = "5caa8dcab88a651dbb1db02e18a5fdd3bbcff7f0"
 first-seen = 2026-10-22T06:47:03.978975Z
 
+[[source]]
+tag = "v6.1.0"
+commit = "6ab62f6d0545adf2052e413e349c8b5d9904e575"
+first-seen = 2026-11-21T06:30:28.333008Z
+
 [[test]]
 name = "help"
 run = ["cargo-codspeed", "--help"]
