@@ -5,6 +5,7 @@ import logging
 import os
 import shlex
 import subprocess
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -18,8 +19,37 @@ from ._plan import Plan
 logger = logging.getLogger(__name__)
 
 
+def _upstream_maturin_manifest(src_dir: Path) -> Path | None:
+    pyproject = src_dir / "pyproject.toml"
+    try:
+        with pyproject.open("rb") as stream:
+            upstream = tomllib.load(stream)
+    except FileNotFoundError:
+        return None
+
+    tool = upstream.get("tool")
+    if isinstance(tool, dict):
+        maturin = tool.get("maturin")
+    else:
+        maturin = None
+
+    if isinstance(maturin, dict):
+        manifest = maturin.get("manifest-path")
+    else:
+        manifest = None
+
+    if manifest is None:
+        return None
+    if not isinstance(manifest, str) or not manifest:
+        raise ValueError(
+            f"{pyproject}: tool.maturin.manifest-path must be a non-empty string"
+        )
+    return (src_dir / manifest).resolve()
+
+
 @dataclass(frozen=True)
 class _CargoPackage:
+    manifest: Path
     version: str
     readme: Path
 
@@ -77,8 +107,7 @@ class RustBuilder:
                     logger.info("ignoring upstream Cargo configuration: %s", config)
                     config.unlink()
 
-        manifest = src_dir / self.tool.tool.manifest
-        package = self._manifest_metadata(src_dir, manifest)
+        package = self._manifest_metadata(src_dir)
 
         raw_version = self.tool.tool.version or package.version
         version = Version(raw_version)
@@ -105,13 +134,21 @@ class RustBuilder:
                     "urls",
                 ],
             },
-            "tool": {"maturin": {"bindings": "bin", "manifest-path": str(manifest)}},
+            "tool": {
+                "maturin": {"bindings": "bin", "manifest-path": str(package.manifest)}
+            },
         }
         (build_dir / "pyproject.toml").write_text(
             tomlkit.dumps(pyproject), encoding="utf-8"
         )
 
-    def _manifest_metadata(self, src_dir: Path, manifest: Path) -> _CargoPackage:
+    def _manifest_metadata(self, src_dir: Path) -> _CargoPackage:
+        override = self.tool.tool.manifest
+        if override is None:
+            manifest = src_dir / "Cargo.toml"
+        else:
+            manifest = src_dir / override
+
         result = subprocess.run(
             [
                 self.plan.cargo_bin,
@@ -129,21 +166,41 @@ class RustBuilder:
             text=True,
         )
         metadata = json.loads(result.stdout)
-        manifest = manifest.resolve()
-        for package in metadata["packages"]:
-            if Path(package["manifest_path"]).resolve() == manifest:
-                readme = package.get("readme")
-                if not isinstance(readme, str):
-                    raise ValueError(f"package does not declare a README: {manifest}")
-                readme_path = Path(readme)
-                if not readme_path.is_absolute():
-                    readme_path = manifest.parent / readme_path
-                readme_path = readme_path.resolve()
-                if not readme_path.is_relative_to(src_dir.resolve()):
-                    raise ValueError(
-                        f"package README is outside the source checkout: {readme_path}"
-                    )
-                if not readme_path.is_file():
-                    raise ValueError(f"package README does not exist: {readme_path}")
-                return _CargoPackage(version=package["version"], readme=readme_path)
-        raise ValueError(f"no package found for manifest: {manifest}")
+        packages = metadata["packages"]
+        if override is None:
+            default_members = set(metadata["workspace_default_members"])
+            packages = [pkg for pkg in packages if pkg["id"] in default_members]
+
+        if override is None and len(packages) == 1:
+            package = packages[0]
+        else:
+            if override is None:
+                selected_manifest = _upstream_maturin_manifest(src_dir)
+            else:
+                selected_manifest = manifest.resolve()
+
+            for package in packages:
+                if Path(package["manifest_path"]).resolve() == selected_manifest:
+                    break
+            else:
+                package = None
+        if package is None:
+            raise ValueError(
+                f"could not select a Cargo package for {manifest}. "
+                "Set tool.manifest to the package's Cargo.toml."
+            )
+
+        manifest = Path(package["manifest_path"]).resolve()
+        readme = package.get("readme")
+        if readme is None:
+            raise ValueError(f"package does not declare a README: {manifest}")
+        readme_path = (manifest.parent / readme).resolve()
+        if not readme_path.is_relative_to(src_dir.resolve()):
+            raise ValueError(
+                f"package README is outside the source checkout: {readme_path}"
+            )
+        if not readme_path.is_file():
+            raise ValueError(f"package README does not exist: {readme_path}")
+        return _CargoPackage(
+            manifest=manifest, version=package["version"], readme=readme_path
+        )

@@ -109,8 +109,8 @@ class RustToolSpec(_ToolSpec):
     version: StrictStr | None = None
     """The package version, defaulting to the version from `cargo metadata`."""
 
-    manifest: StrictStr = "Cargo.toml"
-    """The source-relative path to the tool's Cargo manifest."""
+    manifest: StrictStr | None = None
+    """Override the Cargo manifest path relative to the source checkout."""
 
     no_default_features: StrictBool = False
     """Whether to pass `--no-default-features` to the Rust build."""
