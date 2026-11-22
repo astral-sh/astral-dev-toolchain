@@ -1,12 +1,9 @@
 """Check out tool sources and dispatch to the appropriate build backend."""
 
-import shutil
 import subprocess
-from collections.abc import Iterator
-from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from tempfile import gettempdir
+from tempfile import TemporaryDirectory
 
 from astral_dev_toolchain_core import GoToolSpec, RustToolSpec, Tool
 
@@ -15,31 +12,16 @@ from ._build_rust import RustBuilder
 from ._plan import Plan
 
 
-@contextmanager
-def _build_root() -> Iterator[Path]:
-    # Each container builds one tool at a time. A fixed checkout path keeps
-    # Rust symbols, Zig runtime debug info and CycloneDX references reproducible.
-    # TODO(https://github.com/astral-sh/astral-dev-toolchain/issues/142):
-    # Once we upgrade to Rust 1.101, try Cargo's trim-paths and remove the fixed
-    # path if Zig and CycloneDX also produce path-independent output.
-    root = Path(gettempdir()) / "astral-dev-toolchain-build"
-    root.mkdir(mode=0o700)
-    try:
-        yield root
-    finally:
-        shutil.rmtree(root)
-
-
 @dataclass
 class Builder:
     plan: Plan
     tool: Tool
 
     def build(self) -> None:
-        with _build_root() as root:
+        with TemporaryDirectory() as tempdir:
             # Build up our directory structure. Roughly:
             #
-            # {root}
+            # {tmpdir}
             # |
             # |- builder/
             # | |
@@ -47,8 +29,8 @@ class Builder:
             # | |- README.md (generated for Rust and Go builds)
             # |
             # |- src/ (git clone contents)
-            src_dir = root / "src"
-            build_dir = root / "builder"
+            src_dir = Path(tempdir) / "src"
+            build_dir = Path(tempdir) / "builder"
             src_dir.mkdir()
             build_dir.mkdir()
             self._checkout(src_dir)

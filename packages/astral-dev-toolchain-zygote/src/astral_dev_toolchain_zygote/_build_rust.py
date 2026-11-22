@@ -46,6 +46,18 @@ class RustBuilder:
             command.extend(["--features", ",".join(self.tool.tool.features)])
         command.extend(["--out", self.plan.output_dir])
 
+        # RUSTFLAGS would override the tool's and the image's target-specific flags.
+        # Use Cargo's trim-paths instead of a wrapper once we upgrade to Rust 1.101
+        # (https://github.com/astral-sh/astral-dev-toolchain/issues/142).
+        env = os.environ | self.tool.tool.env
+        wrapper = build_dir / "rustc-wrapper"
+        remap = shlex.quote(f"--remap-path-prefix={src_dir.resolve()}=/src")
+        inner = env.get("RUSTC_WRAPPER")
+        compiler = f'{shlex.quote(inner)} "$@"' if inner else '"$@"'
+        wrapper.write_text(f"#!/bin/sh\nexec {compiler} {remap}\n", encoding="utf-8")
+        wrapper.chmod(0o700)
+        env["RUSTC_WRAPPER"] = str(wrapper)
+
         if self.plan.dry_run and self.tool.tool.env:
             logger.info("[dry-run] environment overrides: %r", self.tool.tool.env)
 
@@ -58,11 +70,20 @@ class RustBuilder:
                     build_dir,
                 )
             else:
+                target_env = env.copy()
+                if target.endswith("-linux-gnu"):
+                    # Zig builds glibc and libunwind with its own Clang invocations.
+                    # Linker flags don't reach them. '+' appends a flag, '#' silences
+                    # Clang's override log.
+                    overrides = env.get("CCC_OVERRIDE_OPTIONS", "#")
+                    target_env["CCC_OVERRIDE_OPTIONS"] = (
+                        f"{overrides} +-fdebug-compilation-dir=."
+                    )
                 subprocess.run(
                     target_command,
                     check=True,
                     cwd=build_dir,
-                    env=os.environ | self.tool.tool.env,
+                    env=target_env,
                 )
 
     def _prepare(self, src_dir: Path, build_dir: Path) -> None:
