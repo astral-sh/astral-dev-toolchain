@@ -33,11 +33,22 @@ def _remove_cargo_config(src_dir: Path, directory: Path) -> None:
     cargo_dir = (directory / ".cargo").resolve()
     if not cargo_dir.is_relative_to(src_dir):
         raise ValueError(f"Cargo config directory is outside {src_dir}: {cargo_dir}")
+    if not cargo_dir.is_dir():
+        return
+    # A workspace manifest or lockfile can be symlinked through a config file.
+    workspace_files = [
+        path
+        for path in (src_dir / "Cargo.toml", src_dir / "Cargo.lock")
+        if path.is_file()
+    ]
     for name in ("config.toml", "config"):
         config = cargo_dir / name
         if config.is_symlink() or config.is_file():
             logger.info("ignoring upstream Cargo configuration: %s", config)
             config.unlink()
+    for path in workspace_files:
+        if not path.is_file():
+            raise ValueError(f"removing Cargo configuration invalidated {path}")
 
 
 def _upstream_maturin_manifest(src_dir: Path) -> Path | None:
