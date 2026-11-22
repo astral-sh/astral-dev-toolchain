@@ -20,12 +20,14 @@ logger = logging.getLogger(__name__)
 
 
 def _upstream_maturin_manifest(src_dir: Path) -> Path | None:
-    pyproject = src_dir / "pyproject.toml"
     try:
-        with pyproject.open("rb") as stream:
-            upstream = tomllib.load(stream)
+        pyproject = (src_dir / "pyproject.toml").resolve(strict=True)
     except FileNotFoundError:
         return None
+    if not pyproject.is_relative_to(src_dir.resolve()) or not pyproject.is_file():
+        raise ValueError(f"expected a regular pyproject.toml inside {src_dir}")
+    with pyproject.open("rb") as stream:
+        upstream = tomllib.load(stream)
 
     tool = upstream.get("tool")
     if isinstance(tool, dict):
