@@ -17,10 +17,11 @@ from ._plan import Plan
 
 @contextmanager
 def _build_root() -> Iterator[Path]:
-    # rustc's --remap-path-prefix and Cargo's trim-paths (Rust 1.101,
-    # https://github.com/rust-lang/cargo/issues/12137) don't rewrite checkout
-    # paths in Zig's runtime debug info or cargo-cyclonedx's SBOM references.
-    # Each container builds one tool at a time, so we can use a fixed path.
+    # Each container builds one tool at a time. A fixed checkout path keeps
+    # Rust symbols, Zig runtime debug info and CycloneDX references reproducible.
+    # TODO(https://github.com/astral-sh/astral-dev-toolchain/issues/142):
+    # Once we upgrade to Rust 1.101, try Cargo's trim-paths and remove the fixed
+    # path if Zig and CycloneDX also produce path-independent output.
     root = Path(gettempdir()) / "astral-dev-toolchain-build"
     root.mkdir(mode=0o700)
     try:
