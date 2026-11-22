@@ -51,6 +51,9 @@ class RustBuilder:
 
         for target in self.plan.targets:
             target_command = [*command, "--target", target]
+            if target.endswith("-windows-msvc"):
+                # Derive the PE timestamp from the binary's contents.
+                target_command.extend(["--", "-C", "link-arg=/Brepro"])
             if self.plan.dry_run:
                 logger.info(
                     "[dry-run] would have run: '%s' in '%s'",
