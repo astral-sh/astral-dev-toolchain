@@ -19,13 +19,32 @@ from ._plan import Plan
 logger = logging.getLogger(__name__)
 
 
+def _resolve_checkout_file(src_dir: Path, path: Path) -> Path:
+    resolved = path.resolve(strict=True)
+    if not resolved.is_relative_to(src_dir) or not resolved.is_file():
+        raise ValueError(f"expected a regular {path.name} inside {src_dir}")
+    return resolved
+
+
+def _remove_cargo_config(src_dir: Path, directory: Path) -> None:
+    # Cargo has no option to disable configuration discovered in a source
+    # tree, and higher-priority configuration cannot clear array values.
+    # The checkout is temporary, so remove both supported filenames.
+    cargo_dir = (directory / ".cargo").resolve()
+    if not cargo_dir.is_relative_to(src_dir):
+        raise ValueError(f"Cargo config directory is outside {src_dir}: {cargo_dir}")
+    for name in ("config.toml", "config"):
+        config = cargo_dir / name
+        if config.is_symlink() or config.is_file():
+            logger.info("ignoring upstream Cargo configuration: %s", config)
+            config.unlink()
+
+
 def _upstream_maturin_manifest(src_dir: Path) -> Path | None:
     try:
-        pyproject = (src_dir / "pyproject.toml").resolve(strict=True)
+        pyproject = _resolve_checkout_file(src_dir, src_dir / "pyproject.toml")
     except FileNotFoundError:
         return None
-    if not pyproject.is_relative_to(src_dir.resolve()) or not pyproject.is_file():
-        raise ValueError(f"expected a regular pyproject.toml inside {src_dir}")
     with pyproject.open("rb") as stream:
         upstream = tomllib.load(stream)
 
@@ -98,18 +117,17 @@ class RustBuilder:
                 )
 
     def _prepare(self, src_dir: Path, build_dir: Path) -> None:
+        src_dir = src_dir.resolve()
         if not self.tool.tool.cargo_config:
-            # Cargo has no option to disable configuration discovered in a source
-            # tree, and higher-priority configuration cannot clear array values.
-            # The checkout is temporary, so remove both supported filenames.
-            cargo_dir = src_dir / ".cargo"
-            for name in ("config.toml", "config"):
-                config = cargo_dir / name
-                if config.is_file() or config.is_symlink():
-                    logger.info("ignoring upstream Cargo configuration: %s", config)
-                    config.unlink()
+            _remove_cargo_config(src_dir, src_dir)
 
         package = self._manifest_metadata(src_dir)
+        if self.tool.tool.manifest is None and not self.tool.tool.cargo_config:
+            # cargo-xwin looks up Rust flags starting at the member's directory.
+            for directory in package.manifest.parents:
+                if directory == src_dir:
+                    break
+                _remove_cargo_config(src_dir, directory)
 
         raw_version = self.tool.tool.version or package.version
         version = Version(raw_version)
@@ -167,6 +185,8 @@ class RustBuilder:
         override = self.tool.tool.manifest
         if override is None:
             manifest = src_dir / "Cargo.toml"
+            # Cargo resolves members relative to the original manifest path.
+            _resolve_checkout_file(src_dir, manifest)
         else:
             manifest = src_dir / override
 
@@ -196,24 +216,29 @@ class RustBuilder:
             )
 
         member_manifest = Path(package["manifest_path"])
-        manifest = member_manifest.resolve()
-        if override is None and manifest.parent != member_manifest.parent.resolve():
-            raise ValueError(
-                f"inferred manifest changes package directory: {member_manifest}"
-            )
-        # Maturin invokes Cargo on the member, which can inherit dependencies
-        # from a nested workspace instead of the one that selected it.
-        if override is None and manifest != src_dir / "Cargo.toml":
-            member_metadata = self._cargo_metadata(src_dir, manifest)
-            if member_metadata["workspace_root"] != metadata["workspace_root"]:
+        if override is None:
+            manifest = _resolve_checkout_file(src_dir, member_manifest)
+            if manifest.parent != member_manifest.parent.resolve():
                 raise ValueError(
-                    f"inferred manifest selects a different Cargo workspace: {manifest}"
+                    f"inferred manifest changes package directory: {member_manifest}"
                 )
+            # Maturin invokes Cargo on the member, which can inherit dependencies
+            # from a nested workspace instead of the one that selected it.
+            if manifest != src_dir / "Cargo.toml":
+                member_metadata = self._cargo_metadata(src_dir, manifest)
+                if member_metadata["workspace_root"] != metadata["workspace_root"]:
+                    raise ValueError(
+                        "inferred manifest selects a different Cargo workspace: "
+                        f"{manifest}"
+                    )
+        else:
+            manifest = member_manifest.resolve()
+
         readme = package.get("readme")
         if readme is None:
             raise ValueError(f"package does not declare a README: {manifest}")
         readme_path = (manifest.parent / readme).resolve()
-        if not readme_path.is_relative_to(src_dir.resolve()):
+        if not readme_path.is_relative_to(src_dir):
             raise ValueError(
                 f"package README is outside the source checkout: {readme_path}"
             )
