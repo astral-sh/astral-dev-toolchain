@@ -192,7 +192,12 @@ class RustBuilder:
                 "Set tool.manifest to the package's Cargo.toml."
             )
 
-        manifest = Path(package["manifest_path"]).resolve()
+        member_manifest = Path(package["manifest_path"])
+        manifest = member_manifest.resolve()
+        if override is None and manifest.parent != member_manifest.parent.resolve():
+            raise ValueError(
+                f"inferred manifest changes package directory: {member_manifest}"
+            )
         readme = package.get("readme")
         if readme is None:
             raise ValueError(f"package does not declare a README: {manifest}")
