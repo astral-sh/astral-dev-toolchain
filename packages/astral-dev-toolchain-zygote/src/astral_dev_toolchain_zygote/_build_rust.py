@@ -144,13 +144,7 @@ class RustBuilder:
             tomlkit.dumps(pyproject), encoding="utf-8"
         )
 
-    def _manifest_metadata(self, src_dir: Path) -> _CargoPackage:
-        override = self.tool.tool.manifest
-        if override is None:
-            manifest = src_dir / "Cargo.toml"
-        else:
-            manifest = src_dir / override
-
+    def _cargo_metadata(self, src_dir: Path, manifest: Path) -> dict:
         result = subprocess.run(
             [
                 self.plan.cargo_bin,
@@ -167,7 +161,16 @@ class RustBuilder:
             stdout=subprocess.PIPE,
             text=True,
         )
-        metadata = json.loads(result.stdout)
+        return json.loads(result.stdout)
+
+    def _manifest_metadata(self, src_dir: Path) -> _CargoPackage:
+        override = self.tool.tool.manifest
+        if override is None:
+            manifest = src_dir / "Cargo.toml"
+        else:
+            manifest = src_dir / override
+
+        metadata = self._cargo_metadata(src_dir, manifest)
         packages = metadata["packages"]
         if override is None:
             default_members = set(metadata["workspace_default_members"])
@@ -198,6 +201,14 @@ class RustBuilder:
             raise ValueError(
                 f"inferred manifest changes package directory: {member_manifest}"
             )
+        # Maturin invokes Cargo on the member, which can inherit dependencies
+        # from a nested workspace instead of the one that selected it.
+        if override is None and manifest != src_dir / "Cargo.toml":
+            member_metadata = self._cargo_metadata(src_dir, manifest)
+            if member_metadata["workspace_root"] != metadata["workspace_root"]:
+                raise ValueError(
+                    f"inferred manifest selects a different Cargo workspace: {manifest}"
+                )
         readme = package.get("readme")
         if readme is None:
             raise ValueError(f"package does not declare a README: {manifest}")
