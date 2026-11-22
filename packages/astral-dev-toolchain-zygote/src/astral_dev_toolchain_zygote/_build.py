@@ -1,9 +1,12 @@
 """Check out tool sources and dispatch to the appropriate build backend."""
 
+import shutil
 import subprocess
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import gettempdir
 
 from astral_dev_toolchain_core import GoToolSpec, RustToolSpec, Tool
 
@@ -12,16 +15,30 @@ from ._build_rust import RustBuilder
 from ._plan import Plan
 
 
+@contextmanager
+def _build_root() -> Iterator[Path]:
+    # rustc's --remap-path-prefix and Cargo's trim-paths (Rust 1.101,
+    # https://github.com/rust-lang/cargo/issues/12137) don't rewrite checkout
+    # paths in Zig's runtime debug info or cargo-cyclonedx's SBOM references.
+    # Each container builds one tool at a time, so we can use a fixed path.
+    root = Path(gettempdir()) / "astral-dev-toolchain-build"
+    root.mkdir(mode=0o700)
+    try:
+        yield root
+    finally:
+        shutil.rmtree(root)
+
+
 @dataclass
 class Builder:
     plan: Plan
     tool: Tool
 
     def build(self) -> None:
-        with TemporaryDirectory() as tempdir:
+        with _build_root() as root:
             # Build up our directory structure. Roughly:
             #
-            # {tmpdir}
+            # {root}
             # |
             # |- builder/
             # | |
@@ -29,8 +46,8 @@ class Builder:
             # | |- README.md (generated for Rust and Go builds)
             # |
             # |- src/ (git clone contents)
-            src_dir = Path(tempdir) / "src"
-            build_dir = Path(tempdir) / "builder"
+            src_dir = root / "src"
+            build_dir = root / "builder"
             src_dir.mkdir()
             build_dir.mkdir()
             self._checkout(src_dir)
