@@ -21,7 +21,6 @@ RUN --mount=type=cache,id=astral-ubuntu-apt-lists-${TARGETARCH}-v4,target=/var/l
         /etc/apt/sources.list.d/ubuntu.sources \
     && apt update \
     && DEBIAN_FRONTEND=noninteractive apt install -y --no-install-recommends \
-        curl \
         git
 
 FROM ubuntu-build-deps AS base
