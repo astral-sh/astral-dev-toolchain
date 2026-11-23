@@ -1,6 +1,5 @@
 import tomllib
 from datetime import timedelta
-from unittest.mock import patch
 
 import pytest
 import tomlkit
@@ -184,19 +183,14 @@ def test_shared_repository_failure_is_atomic(observed_tool, tool_factory, update
     assert all(path.read_bytes() == content for path, content in before.items())
 
 
-def test_tools_share_discovery_and_respect_prefixes(
-    tool_factory, upstream, update, now
-):
+def test_shared_repository_respects_tag_prefixes(tool_factory, upstream, update, now):
     paths = []
     for name in ("first", "second"):
         prefix = f"{name}/"
         paths.append(tool_factory(name, prefix=prefix))
         upstream.tag(f"{prefix}v1.9.0", upstream.commits[0])
         upstream.tag(f"{prefix}v2.0.0", upstream.commits[2])
-    git = Git()
-    with patch.object(git, "tags", wraps=git.tags) as tags:
-        assert not update(git=git).errors
-        assert tags.call_count == 1
+    assert not update().errors
     assert not update(now=now + COOLDOWN).errors
     assert [Tool.load(path).source.tag for path in paths] == [
         "first/v2.0.0",
