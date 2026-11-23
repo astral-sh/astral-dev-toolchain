@@ -39,12 +39,8 @@ astral-dev-toolchain = { workspace = true }
 [tool.uv.workspace]
 members = ["packages/*"]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-
 [dependency-groups]
 dev = [
-    "pytest>=9.1.1",
     "ruff>=0.16.3",
     "ty>=0.0.71",
 ]

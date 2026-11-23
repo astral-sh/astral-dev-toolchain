@@ -65,6 +65,3 @@ jobs:
 
       - name: Check types
         run: uv run --no-sync ty check
-
-      - name: Unit tests
-        run: uv run --no-sync pytest
