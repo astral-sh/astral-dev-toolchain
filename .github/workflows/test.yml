@@ -3,6 +3,10 @@ name: Toolchain test
 on:
   workflow_call:
     inputs:
+      test-build-changes:
+        description: "Test both build backends when shared build files change"
+        type: boolean
+        default: false
       select:
         description: "Tools to test (comma-separated tool.name values from build.toml)"
         required: false
@@ -27,6 +31,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
+      build-changed: ${{ steps.select.outputs.build-changed }}
       tools: ${{ steps.select.outputs.tools }}
       matrix: ${{ steps.select.outputs.matrix }}
       targets: ${{ steps.select.outputs.targets }}
@@ -62,4 +67,18 @@ jobs:
       tool: ${{ matrix.tool }}
       targets: ${{ matrix.targets }}
       shard-targets: ${{ matrix.shard }}
+      smoke: true
+
+  hello:
+    name: Test Rust and Go builders
+    needs: select
+    if: inputs.test-build-changes && needs.select.outputs.build-changed == 'true'
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/toolchain-tool.yml
+    with:
+      tool: hello-world
+      hello-world: true
+      targets: ${{ needs.select.outputs.targets }}
       smoke: true
