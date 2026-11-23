@@ -46,17 +46,16 @@ class RustBuilder:
             command.extend(["--features", ",".join(self.tool.tool.features)])
         command.extend(["--out", self.plan.output_dir])
 
-        # RUSTFLAGS would override the tool's and the image's target-specific flags.
-        # Use Cargo's trim-paths instead of a wrapper once we upgrade to Rust 1.101
-        # (https://github.com/astral-sh/astral-dev-toolchain/issues/142).
-        env = os.environ | self.tool.tool.env
-        wrapper = build_dir / "rustc-wrapper"
-        remap = shlex.quote(f"--remap-path-prefix={src_dir.resolve()}=/src")
-        inner = env.get("RUSTC_WRAPPER")
-        compiler = f'{shlex.quote(inner)} "$@"' if inner else '"$@"'
-        wrapper.write_text(f"#!/bin/sh\nexec {compiler} {remap}\n", encoding="utf-8")
-        wrapper.chmod(0o700)
-        env["RUSTC_WRAPPER"] = str(wrapper)
+        # Remap the temporary checkout to /src so paths in debug info and
+        # file!() are reproducible across builds.
+        remap = tomlkit.string(f"--remap-path-prefix={src_dir.resolve()}=/src")
+
+        # Cargo combines cfg(all()) flags with the target triple's flags.
+        # Both take precedence over build.rustflags.
+        # TODO: Use Cargo's trim-paths on Rust 1.101 (issue #142).
+        command.extend(
+            ["--config", f"target.'cfg(all())'.rustflags=[{remap.as_string()}]"]
+        )
 
         if self.plan.dry_run and self.tool.tool.env:
             logger.info("[dry-run] environment overrides: %r", self.tool.tool.env)
@@ -70,12 +69,15 @@ class RustBuilder:
                     build_dir,
                 )
             else:
-                target_env = env.copy()
+                target_env = os.environ | self.tool.tool.env
+
+                # Record '.' as the compilation directory to keep the temporary
+                # build path out of the debug info for glibc and libunwind.
                 if target.endswith("-linux-gnu"):
-                    # Zig builds glibc and libunwind with its own Clang invocations.
-                    # Linker flags don't reach them. '+' appends a flag, '#' silences
-                    # Clang's override log.
-                    overrides = env.get("CCC_OVERRIDE_OPTIONS", "#")
+                    # Rust and linker flags don't reach Zig's Clang invocations.
+                    # In CCC_OVERRIDE_OPTIONS, '+' appends the flag and '#'
+                    # silences Clang's override log.
+                    overrides = target_env.get("CCC_OVERRIDE_OPTIONS", "#")
                     target_env["CCC_OVERRIDE_OPTIONS"] = (
                         f"{overrides} +-fdebug-compilation-dir=."
                     )
