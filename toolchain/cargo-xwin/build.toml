@@ -18,3 +18,8 @@ repo = "https://github.com/rust-cross/cargo-xwin"
 [[source]]
 tag = "v0.23.1"
 commit = "cb1c19572bd64c801f45c6fc96e234ccb0d5acc5"
+[[source]]
+tag = "v0.24.1"
+commit = "6d4ebf45c9eb3a749dc097f702efcc5454b61c40"
+first-seen = 2026-11-23T06:43:58.831434Z
+
