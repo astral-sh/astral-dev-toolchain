@@ -101,7 +101,7 @@ def definition(
 @pytest.fixture
 def repo_factory(tmp_path: Path):
     # Each test can move/delete tags or make its repository unavailable.
-    def create(name: str = "Upstream Repository.git", *, object_format: str = "sha1"):
+    def create(name: str = "Upstream Repository.git"):
         path = tmp_path / name
         path.mkdir()
         repo = GitRepo(path)
@@ -110,7 +110,7 @@ def repo_factory(tmp_path: Path):
             "init.templateDir=",
             "init",
             "--bare",
-            f"--object-format={object_format}",
+            "--object-format=sha1",
         )
         tree = repo.run("mktree", input="")
         commits = []

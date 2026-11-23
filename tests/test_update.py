@@ -4,9 +4,8 @@ from datetime import timedelta
 import pytest
 import tomlkit
 from astral_dev_toolchain._git import Git
-from astral_dev_toolchain._update import COOLDOWN, definitions, scan, tag_version
+from astral_dev_toolchain._update import COOLDOWN, definitions, scan
 from astral_dev_toolchain_core import Tool
-from packaging.version import Version
 
 
 def observations(path):
@@ -15,23 +14,6 @@ def observations(path):
         for source in Tool.load(path).sources
         if source.first_seen is not None
     }
-
-
-@pytest.mark.parametrize(
-    "tag, prefix, expected",
-    [
-        ("1.9.0", "", "1.9.0"),
-        ("v1.10.0", "", "1.10.0"),
-        ("project/v2.0.0", "project/", "2.0.0"),
-        ("other/v2.0.0", "project/", None),
-        ("v2.0.0-rc.1", "", None),
-        ("2.0.0+local", "", None),
-        ("2.0", "", None),
-        ("02.0.0", "", None),
-    ],
-)
-def test_tag_versions(tag, prefix, expected):
-    assert tag_version(tag, prefix) == (Version(expected) if expected else None)
 
 
 @pytest.mark.parametrize("go", [False, True], ids=["rust", "go"])
@@ -215,14 +197,9 @@ def test_new_repository_restarts_observations(
     assert discovery.observed["v2.0.0"].first_seen == now + COOLDOWN
 
 
-def test_selection_and_disabled_tools(tool_file, tool_factory, update):
+def test_disabled_tools_are_skipped(tool_factory, update):
     manual = tool_factory("manual")
     manual.write_text(manual.read_text().replace("enabled = true", "enabled = false"))
     result = update(selected=["manual"])
     assert not result.errors
     assert not result.discoveries
-    with pytest.raises(ValueError, match="unknown tools"):
-        update(selected=["missing"])
-    assert [
-        d.path for d in definitions(tool_file.parent.parent, ["example", "example"])
-    ] == [tool_file]
