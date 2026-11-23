@@ -46,6 +46,18 @@ class RustBuilder:
             command.extend(["--features", ",".join(self.tool.tool.features)])
         command.extend(["--out", self.plan.output_dir])
 
+        # Remap the temporary checkout to /src so paths in debug info and
+        # file!() are reproducible across builds.
+        remap = tomlkit.string(f"--remap-path-prefix={src_dir.resolve()}=/src")
+
+        # Cargo combines cfg(all()) flags with the target triple's flags.
+        # Both take precedence over build.rustflags.
+        # TODO(#142): Use trim-paths once we upgrade to Rust 1.101.
+        # Stabilization: https://github.com/rust-lang/cargo/pull/17488
+        command.extend(
+            ["--config", f"target.'cfg(all())'.rustflags=[{remap.as_string()}]"]
+        )
+
         if self.plan.dry_run and self.tool.tool.env:
             logger.info("[dry-run] environment overrides: %r", self.tool.tool.env)
 
@@ -58,11 +70,26 @@ class RustBuilder:
                     build_dir,
                 )
             else:
+                target_env = os.environ | self.tool.tool.env
+
+                # Record '.' as the compilation directory to keep the temporary
+                # build path out of the debug info for glibc and libunwind.
+                # See https://github.com/ziglang/zig/issues/9361 for the broader
+                # request for relative debug paths in Zig.
+                if target.endswith("-linux-gnu"):
+                    # Rust and linker flags don't reach Zig's Clang invocations.
+                    # In CCC_OVERRIDE_OPTIONS, '+' appends the flag and '#'
+                    # silences Clang's override log.
+                    # See https://github.com/llvm/llvm-project/pull/142396
+                    overrides = target_env.get("CCC_OVERRIDE_OPTIONS", "#")
+                    target_env["CCC_OVERRIDE_OPTIONS"] = (
+                        f"{overrides} +-fdebug-compilation-dir=."
+                    )
                 subprocess.run(
                     target_command,
                     check=True,
                     cwd=build_dir,
-                    env=os.environ | self.tool.tool.env,
+                    env=target_env,
                 )
 
     def _prepare(self, src_dir: Path, build_dir: Path) -> None:
