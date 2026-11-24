@@ -59,7 +59,7 @@ jobs:
 
       - name: Build Rust and Go examples
         if: inputs.hello-world
-        run: bash scripts/ci-build-hello.sh
+        run: uv run --locked python scripts/ci-build-hello.py
 
       - name: Build tool
         if: ${{ !inputs.hello-world }}
