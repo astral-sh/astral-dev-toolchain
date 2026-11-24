@@ -69,7 +69,7 @@ jobs:
       smoke: true
 
   test-hello-world:
-    name: Test Rust and Go builders
+    name: Test end-to-end
     needs: select
     if: inputs.test-hello-world
     permissions:
