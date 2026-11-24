@@ -143,8 +143,10 @@ uv run astral-dev-toolchain update
 If you set `tool.backend = "rust"`, the following backend options become available:
 
 - `tool.manifest` overrides the repo-relative path to the `Cargo.toml` manifest
-  that maturin uses. By default, this is just `Cargo.toml`, but workspace-style
-  repos may need a custom path.
+  used to select the package to build. If omitted, the builder uses the sole
+  package selected by default by `cargo build`. When there are multiple default
+  packages, the upstream `pyproject.toml`'s `[tool.maturin].manifest-path`
+  can select one of them. Set `tool.manifest` if the selection is ambiguous.
 - `tool.no-default-features` passes `--no-default-features` to the build.
   By default this is `false` (i.e. default features are enabled).
 - `tool.env` is a table of string environment overrides for the tool's Cargo
