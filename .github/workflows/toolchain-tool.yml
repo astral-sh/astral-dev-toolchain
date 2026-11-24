@@ -7,6 +7,10 @@ on:
         description: "Tool to build (tool.name from build.toml)"
         required: true
         type: string
+      hello-world:
+        description: "Build and test the CI examples instead of a published tool"
+        type: boolean
+        default: false
       targets:
         description: "JSON array of image targets and their native smoke-test runners"
         required: true
@@ -53,7 +57,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Build Rust and Go examples
+        if: inputs.hello-world
+        run: uv run --locked python scripts/ci-build-hello.py
+
       - name: Build tool
+        if: ${{ !inputs.hello-world }}
         env:
           TOOL: ${{ inputs.tool }}
           TARGET: ${{ matrix.target }}
@@ -98,7 +107,26 @@ jobs:
           name: toolchain-${{ inputs.tool }}${{ inputs.shard-targets && format('-{0}', matrix.target) || '' }}
           path: toolchain-dist
 
+      - name: Run Rust example
+        if: inputs.hello-world
+        shell: bash
+        run: |
+          greeting=$(uv tool run --isolated --offline --no-index --no-cache --no-config \
+            --find-links toolchain-dist --from astral-dev-toolchain-hello-rust hello-rust)
+          echo "$greeting"
+          [[ "$greeting" == "Hello, world!" ]]
+
+      - name: Run Go example
+        if: inputs.hello-world
+        shell: bash
+        run: |
+          greeting=$(uv tool run --isolated --offline --no-index --no-cache --no-config \
+            --find-links toolchain-dist --from astral-dev-toolchain-hello-go hello-go)
+          echo "$greeting"
+          [[ "$greeting" == "Hello, world!" ]]
+
       - name: Test wheels
+        if: ${{ !inputs.hello-world }}
         env:
           ASTRAL_DEV_TOOLCHAIN_TEST_SELECT: ${{ format('[{0}]', toJSON(inputs.tool)) }}
         run: uv run --locked astral-dev-toolchain test --dist-dir toolchain-dist

@@ -16,6 +16,8 @@ jobs:
       contents: read
       packages: read
     uses: ./.github/workflows/test.yml
+    with:
+      test-hello-world: true
 
   security-review:
     name: Security review

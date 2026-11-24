@@ -3,6 +3,10 @@ name: Toolchain test
 on:
   workflow_call:
     inputs:
+      test-hello-world:
+        description: "Build and smoke-test the Rust and Go hello-world examples"
+        type: boolean
+        default: false
       select:
         description: "Tools to test (comma-separated tool.name values from build.toml)"
         required: false
@@ -62,4 +66,18 @@ jobs:
       tool: ${{ matrix.tool }}
       targets: ${{ matrix.targets }}
       shard-targets: ${{ matrix.shard }}
+      smoke: true
+
+  test-hello-world:
+    name: Test end-to-end
+    needs: select
+    if: inputs.test-hello-world
+    permissions:
+      contents: read
+      packages: read
+    uses: ./.github/workflows/toolchain-tool.yml
+    with:
+      tool: hello-world
+      hello-world: true
+      targets: ${{ needs.select.outputs.targets }}
       smoke: true
