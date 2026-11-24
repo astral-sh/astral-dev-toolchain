@@ -107,16 +107,23 @@ jobs:
           name: toolchain-${{ inputs.tool }}${{ inputs.shard-targets && format('-{0}', matrix.target) || '' }}
           path: toolchain-dist
 
-      - name: Run Rust and Go examples
+      - name: Run Rust example
         if: inputs.hello-world
         shell: bash
         run: |
-          for tool in hello-rust hello-go; do
-            greeting=$(uv tool run --isolated --offline --no-index --no-cache --no-config \
-              --find-links toolchain-dist --from "astral-dev-toolchain-$tool" "$tool")
-            echo "$tool: $greeting"
-            [[ "$greeting" == "Hello, world!" ]]
-          done
+          greeting=$(uv tool run --isolated --offline --no-index --no-cache --no-config \
+            --find-links toolchain-dist --from astral-dev-toolchain-hello-rust hello-rust)
+          echo "$greeting"
+          [[ "$greeting" == "Hello, world!" ]]
+
+      - name: Run Go example
+        if: inputs.hello-world
+        shell: bash
+        run: |
+          greeting=$(uv tool run --isolated --offline --no-index --no-cache --no-config \
+            --find-links toolchain-dist --from astral-dev-toolchain-hello-go hello-go)
+          echo "$greeting"
+          [[ "$greeting" == "Hello, world!" ]]
 
       - name: Test wheels
         if: ${{ !inputs.hello-world }}

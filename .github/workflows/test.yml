@@ -3,8 +3,8 @@ name: Toolchain test
 on:
   workflow_call:
     inputs:
-      test-build-changes:
-        description: "Test both build backends when shared build files change"
+      test-hello-world:
+        description: "Build and smoke-test the Rust and Go hello-world examples"
         type: boolean
         default: false
       select:
@@ -31,7 +31,6 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
-      build-changed: ${{ steps.select.outputs.build-changed }}
       tools: ${{ steps.select.outputs.tools }}
       matrix: ${{ steps.select.outputs.matrix }}
       targets: ${{ steps.select.outputs.targets }}
@@ -69,10 +68,10 @@ jobs:
       shard-targets: ${{ matrix.shard }}
       smoke: true
 
-  test-builders:
+  test-hello-world:
     name: Test Rust and Go builders
     needs: select
-    if: inputs.test-build-changes && needs.select.outputs.build-changed == 'true'
+    if: inputs.test-hello-world
     permissions:
       contents: read
       packages: read

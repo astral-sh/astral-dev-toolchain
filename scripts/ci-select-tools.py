@@ -9,17 +9,6 @@ from typing import TypedDict
 
 from astral_dev_toolchain_core import Tool
 
-_BUILD_FILES = {
-    ".dockerignore",
-    ".python-version",
-    "Dockerfile",
-    "pyproject.toml",
-    "uv.lock",
-    ".github/workflows/ci.yml",
-    ".github/workflows/test.yml",
-    ".github/workflows/toolchain-tool.yml",
-}
-
 
 class _Target(TypedDict):
     target: str
@@ -47,7 +36,6 @@ def main() -> None:
     }
     by_name = {tool.tool.name: tool for tool in definitions.values()}
 
-    build_changed = False
     override = os.environ.get("SELECT", "")
     if override:
         selected = [tool.strip() for tool in override.split(",")]
@@ -61,7 +49,6 @@ def main() -> None:
         selected = [tool]
     elif event_name == "push" and event["before"] == "0" * 40:
         # A newly created branch has no previous commit to compare against.
-        build_changed = True
         selected = list(by_name)
     else:
         if event_name == "pull_request":
@@ -85,16 +72,17 @@ def main() -> None:
                 "--name-only",
                 "-z",
                 "--no-renames",
+                "--diff-filter=d",
                 revision_range,
+                "--",
+                "toolchain/*/build.toml",
             ],
         )
-        paths = {Path(os.fsdecode(path)) for path in changed.split(b"\0") if path}
-        selected = [definitions[path].tool.name for path in paths & definitions.keys()]
-        build_changed = any(
-            path.parts[0] in {"packages", "image", "scripts"}
-            or path.as_posix() in _BUILD_FILES
-            for path in paths
-        )
+        selected = [
+            definitions[Path(path)].tool.name
+            for path in changed.decode().split("\0")
+            if Path(path) in definitions
+        ]
 
     tools = sorted(set(selected))
     targets = _target_matrix()
@@ -142,7 +130,6 @@ def main() -> None:
 
     print(f"Selected tools: {', '.join(tools) or '(none)'}")
     with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
-        print(f"build-changed={json.dumps(build_changed)}", file=output)
         print(f"tools={json.dumps(tools)}", file=output)
         print(f"matrix={json.dumps(matrix)}", file=output)
         print(f"targets={json.dumps(targets)}", file=output)
