@@ -3,27 +3,25 @@ version = 1
 [tool]
 backend = "rust"
 name = "cargo-vet"
-
-[source]
 repo = "https://github.com/mozilla/cargo-vet"
+
+[[source]]
+tag = "v0.10.2"
+commit = "28f617ea97392d527799649db588a6dbb695da8d"
+
+[[source]]
 tag = "v0.10.3"
 commit = "cef4dd43a0b9d2d37febf0e5ad42abc6d9ea5472"
+first-seen = 2026-10-23T06:46:51.727948Z
+
+[[source]]
+tag = "v0.10.4"
+commit = "a9bde85910409be3d2d61e6f6ff6ba7a521f0412"
+first-seen = 2026-11-24T06:33:41.766253Z
 
 [ci]
-shard = true
 # ring 0.16.20 does not support Windows ARM64. cargo-vet's upgrade to ring 0.17
 # is blocked on completing the corresponding supply-chain audits:
 # https://github.com/mozilla/cargo-vet/pull/645
 # Remove this exclusion once cargo-vet ships that upgrade.
 exclude-targets = ["aarch64-pc-windows-msvc"]
-
-[[test]]
-name = "help"
-run = ["cargo-vet", "--help"]
-
-[update]
-enabled = true
-
-[update.observed."v0.10.3"]
-commit = "cef4dd43a0b9d2d37febf0e5ad42abc6d9ea5472"
-first-seen = 2026-10-23T06:46:51.727948Z
