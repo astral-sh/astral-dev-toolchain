@@ -17,19 +17,27 @@ func main() {
 """
 
 
-def prepare_tool(directory: Path, backend: str) -> None:
-    def git(*args: str) -> str:
-        return subprocess.check_output(["git", *args], cwd=directory, text=True).strip()
+def git(directory: Path, *args: str) -> str:
+    return subprocess.check_output(["git", *args], cwd=directory, text=True).strip()
 
+
+def prepare_tool(directory: Path, backend: str) -> None:
     # The builder clones a pinned revision. A Git bundle lets it clone from
     # the read-only /toolchain mount without a remote repository.
     (directory / "README.md").write_text(f"# {directory.name}\n")
-    git("init", "-b", "hello")
-    git("add", ".")
+    git(directory, "init", "-b", "hello")
+    git(directory, "add", ".")
     git(
-        "-c", "user.name=CI", "-c", "user.email=ci@example.com", "commit", "-m", "hello"
+        directory,
+        "-c",
+        "user.name=CI",
+        "-c",
+        "user.email=ci@example.com",
+        "commit",
+        "-m",
+        "hello",
     )
-    git("bundle", "create", "source.bundle", "hello")
+    git(directory, "bundle", "create", "source.bundle", "hello")
 
     definition = {
         "version": 1,
@@ -39,7 +47,7 @@ def prepare_tool(directory: Path, backend: str) -> None:
             "version": "0.1.0",
             "repo": f"/toolchain/{directory.name}/source.bundle",
         },
-        "source": [{"tag": "hello", "commit": git("rev-parse", "HEAD")}],
+        "source": [{"tag": "hello", "commit": git(directory, "rev-parse", "HEAD")}],
     }
     (directory / "build.toml").write_text(tomlkit.dumps(definition))
 
