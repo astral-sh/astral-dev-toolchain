@@ -176,4 +176,7 @@ RUN maturin --version \
     && python-zig version \
     && astral-dev-toolchain-zygote --help
 
+# Keep wheel and SBOM timestamps independent of the build time.
+ENV SOURCE_DATE_EPOCH=0
+
 ENTRYPOINT ["astral-dev-toolchain-zygote"]
