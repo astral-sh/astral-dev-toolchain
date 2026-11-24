@@ -69,7 +69,7 @@ jobs:
       shard-targets: ${{ matrix.shard }}
       smoke: true
 
-  hello:
+  test-builders:
     name: Test Rust and Go builders
     needs: select
     if: inputs.test-build-changes && needs.select.outputs.build-changed == 'true'
