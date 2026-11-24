@@ -9,3 +9,8 @@ repo = "https://github.com/kbknapp/cargo-outdated"
 [[source]]
 tag = "v0.19.0"
 commit = "9a25ecbfcd0a1d7394bb521e89022950bca9d7b0"
+[[source]]
+tag = "v0.20.0"
+commit = "1b039ab4f1df7e647abda62d747592b222c240b7"
+first-seen = 2026-11-24T06:33:41.343534Z
+
