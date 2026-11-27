@@ -7,6 +7,6 @@ manifest = "jaq/Cargo.toml"
 repo = "https://github.com/01mf02/jaq"
 
 [[source]]
-tag = "v3.1.2"
-commit = "f7fea9219d8d5364c91c6a0278765eaa0e6fa95e"
-first-seen = 2026-10-22T06:47:09.208898Z
+tag = "v3.2.0"
+commit = "0ee33bbcf44aed00c91748071e5031e8a5410339"
+first-seen = 2026-11-20T06:32:41.365724Z
