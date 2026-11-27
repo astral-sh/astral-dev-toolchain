@@ -23,3 +23,8 @@ tag = "v0.24.1"
 commit = "6d4ebf45c9eb3a749dc097f702efcc5454b61c40"
 first-seen = 2026-11-23T06:43:58.831434Z
 
+[[source]]
+tag = "v0.24.2"
+commit = "6450c8492a03bc7f6829e96fe67e551e99c15d31"
+first-seen = 2026-11-27T06:34:46.491642Z
+
